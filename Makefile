@@ -1,6 +1,13 @@
 # ===== Compiler & flags =====
 CXX      := g++
-CXXFLAGS := -Wall -Wextra
+
+BUILD ?= debug
+ifeq ($(BUILD),debug)
+	CXXFLAGS := -static -static-libgcc -static-libstdc++ -g3 -O0 -fno-omit-frame-pointer -fno-inline -fno-inline-functions -Wall -Wextra
+else ifeq ($(BUILD),release)
+	CXXFLAGS := -static -static-libgcc -static-libstdc++ -O3 -DNDEBUG
+endif
+
 LDFLAGS  :=
 
 # ===== Directories =====
