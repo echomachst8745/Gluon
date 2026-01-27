@@ -72,6 +72,21 @@ int Board::GetKingSquare(bool forWhite) const
     return kingBucket[0];
 }
 
+Piece::Piece Board::GetPieceAtSquare(int square) const
+{
+    if (!BoardHelpers::IsValidSquare(square))
+    {
+        throw std::out_of_range("Square index out of range: " + std::to_string(square));
+    }
+
+    return squares[square];
+}
+
+Piece::Piece Board::GetPieceAtFileRank(int file, int rank) const
+{
+    return GetPieceAtSquare(BoardHelpers::FileRankToSquare(file, rank));
+}
+
 void Board::Clear()
 {
     squares.fill(Piece::NONE);
@@ -243,21 +258,6 @@ const std::string Board::GetBoardString(bool whitePOV) const
     boardString += whitePOV ? whitePOVFileLabels : blackPOVFileLabels; // Print file letters at the bottom
 
     return boardString;
-}
-
-Piece::Piece Board::GetPieceAtSquare(int square) const
-{
-    if (!BoardHelpers::IsValidSquare(square))
-    {
-        throw std::out_of_range("Square index out of range: " + std::to_string(square));
-    }
-
-    return squares[square];
-}
-
-Piece::Piece Board::GetPieceAtFileRank(int file, int rank) const
-{
-    return GetPieceAtSquare(BoardHelpers::FileRankToSquare(file, rank));
 }
 
 void Board::MakeMove(const MoveGenerator::Move& move)
