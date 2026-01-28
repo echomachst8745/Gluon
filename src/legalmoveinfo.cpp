@@ -28,10 +28,10 @@ void LegalMoveInfo::AddChecker(int square)
     removeBlockCheckBitboard = (1ULL << square);
 }
 
-void LegalMoveInfo::AddSlidingChecker(int square, std::uint64_t blockCheckBitboard) noexcept
+void LegalMoveInfo::AddSlidingChecker(int square, std::uint64_t removeBlockCheckBitboard) noexcept
 {
     AddChecker(square);
-    removeBlockCheckBitboard &= blockCheckBitboard;
+    this->removeBlockCheckBitboard = removeBlockCheckBitboard;
 }
 
 
@@ -57,64 +57,41 @@ bool LegalMoveInfo::KingInDoubleCheck() const noexcept
     return checkerSquares[0] != -1 && checkerSquares[1] != -1;
 }
 
-bool LegalMoveInfo::MoveIsLegal(const Board& board, const MoveGenerator::Move& move) const noexcept
+bool LegalMoveInfo::MoveIsIllegal(const Board& board, const MoveGenerator::Move& move) const noexcept
 {
     const int fromSquare = move.GetFromSquare();
-    const int toSquare   = move.GetToSquare();
-    const std::uint64_t toSquareBitboard = (1ULL << toSquare);
-    const Piece::Piece movingPiece = board.GetPieceAtSquare(fromSquare);
-    const bool isKingMove = (Piece::GetType(movingPiece) == Piece::KING);
+    const int toSquare = move.GetToSquare();
 
-    // Castling is not allowed when in check
-    if (KingInCheck() && 
-        (move.HasFlag(MoveGenerator::MoveValues::KING_CASTLE) || 
-         move.HasFlag(MoveGenerator::MoveValues::QUEEN_CASTLE)))
+    // If in double check, only king moves are legal
+    if (KingInDoubleCheck())
     {
-        return false;
+        Piece::Piece movingPiece = board.GetPieceAtSquare(fromSquare);
+        if (Piece::GetType(movingPiece) != Piece::KING)
+        {
+            return true; // Illegal move
+        }
+        return false; // King moves are handled elsewhere
     }
 
-    // King moves: must not move into attacked squares
-    if (isKingMove)
-    {
-        if ((attackedSquaresBitboard & toSquareBitboard) != 0)
-        {
-            return false;
-        }
-        return true;
-    }
-
-    // Non-king piece moves
-    if (KingInCheck())
-    {
-        // In check: move must capture checker or block the check
-        if ((toSquareBitboard & removeBlockCheckBitboard) == 0)
-        {
-            return false;
-        }
-
-        // If piece is also pinned, it must respect the pin
-        if (pinnedPiecesBitboard & (1ULL << fromSquare))
-        {
-            if ((pinnedPieceLegalMovesBitboards[fromSquare] & toSquareBitboard) == 0)
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    // Not in check
+    // If the piece is pinned, check if the move is legal for the pinned piece
     if (pinnedPiecesBitboard & (1ULL << fromSquare))
     {
-        // Pinned piece must stay on the pin line
-        if ((pinnedPieceLegalMovesBitboards[fromSquare] & toSquareBitboard) == 0)
+        if (!(pinnedPieceLegalMovesBitboards[fromSquare] & (1ULL << toSquare)))
         {
-            return false;
+            return true; // Illegal move
         }
     }
 
-    return true;
+    // If in single check, only moves that capture the checker or block the check are legal
+    if (KingInCheck())
+    {
+        if (!(removeBlockCheckBitboard & (1ULL << toSquare)))
+        {
+            return true; // Illegal move
+        }
+    }
+
+    return false; // Move is legal
 }
 
 } // namespace Gluon

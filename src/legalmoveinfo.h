@@ -32,7 +32,7 @@ struct LegalMoveInfo
 
     bool KingInDoubleCheck() const noexcept;
 
-    bool MoveIsLegal(const Board& board, const MoveGenerator::Move& move) const noexcept;
+    bool MoveIsIllegal(const Board& board, const MoveGenerator::Move& move) const noexcept;
 };
 
 } // namespace Gluon

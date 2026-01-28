@@ -590,7 +590,7 @@ std::vector<Move> GenerateMoves(const Board& board)
 
     for (const Move& move : moves)
     {
-        if (friendlyLegalMoveInfo.MoveIsLegal(board, move))
+        if (!friendlyLegalMoveInfo.MoveIsIllegal(board, move))
         {
             legalMoves.push_back(move);
         }
