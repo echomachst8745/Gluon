@@ -378,15 +378,19 @@ LegalMoveInfo GenerateLegalMoveInfo(const Board& board)
             const int directionOffset = DIRECTION_OFFSETS[directionIndex];
             const int maxSteps = NUMBER_OF_SQUARES_TO_EDGE[pieceSquare][directionIndex];
 
+            std::uint64_t removeBlockCheckBitboard = (1ULL << pieceSquare);
+
             for (int step = 1; step <= maxSteps; ++step)
             {
                 const int attackSquare = pieceSquare + step * directionOffset;
+
+                removeBlockCheckBitboard |= (1ULL << attackSquare);
 
                 legalMoveInfo.SetSquareAsAttacked(attackSquare);
 
                 if (attackSquare == friendlyKingSquare)
                 {
-                    legalMoveInfo.AddChecker(pieceSquare);
+                    legalMoveInfo.AddSlidingChecker(pieceSquare, removeBlockCheckBitboard);
                 }
 
                 Piece::Piece targetPiece = board.GetPieceAtSquare(attackSquare);
@@ -409,15 +413,19 @@ LegalMoveInfo GenerateLegalMoveInfo(const Board& board)
             const int directionOffset = DIRECTION_OFFSETS[directionIndex];
             const int maxSteps = NUMBER_OF_SQUARES_TO_EDGE[pieceSquare][directionIndex];
 
+            std::uint64_t removeBlockCheckBitboard = (1ULL << pieceSquare);
+
             for (int step = 1; step <= maxSteps; ++step)
             {
                 const int attackSquare = pieceSquare + step * directionOffset;
+
+                removeBlockCheckBitboard |= (1ULL << attackSquare);
 
                 legalMoveInfo.SetSquareAsAttacked(attackSquare);
 
                 if (attackSquare == friendlyKingSquare)
                 {
-                    legalMoveInfo.AddChecker(pieceSquare);
+                    legalMoveInfo.AddSlidingChecker(pieceSquare, removeBlockCheckBitboard);
                 }
 
                 Piece::Piece targetPiece = board.GetPieceAtSquare(attackSquare);
@@ -440,15 +448,19 @@ LegalMoveInfo GenerateLegalMoveInfo(const Board& board)
             const int directionOffset = DIRECTION_OFFSETS[directionIndex];
             const int maxSteps = NUMBER_OF_SQUARES_TO_EDGE[pieceSquare][directionIndex];
 
+            std::uint64_t removeBlockCheckBitboard = (1ULL << pieceSquare);
+
             for (int step = 1; step <= maxSteps; ++step)
             {
                 const int attackSquare = pieceSquare + step * directionOffset;
+
+                removeBlockCheckBitboard |= (1ULL << attackSquare);
 
                 legalMoveInfo.SetSquareAsAttacked(attackSquare);
 
                 if (attackSquare == friendlyKingSquare)
                 {
-                    legalMoveInfo.AddChecker(pieceSquare);
+                    legalMoveInfo.AddSlidingChecker(pieceSquare, removeBlockCheckBitboard);
                 }
 
                 Piece::Piece targetPiece = board.GetPieceAtSquare(attackSquare);
@@ -484,11 +496,10 @@ LegalMoveInfo GenerateLegalMoveInfo(const Board& board)
         {
             const int scanSquare = friendlyKingSquare + step * directionOffset;
 
-            pinnedPieceLegalMovesBitboard |= (1ULL << scanSquare);
-
             Piece::Piece targetPiece = board.GetPieceAtSquare(scanSquare);
             if (targetPiece == Piece::NONE)
             {
+                pinnedPieceLegalMovesBitboard |= (1ULL << scanSquare);
                 continue;
             }
 
@@ -512,13 +523,11 @@ LegalMoveInfo GenerateLegalMoveInfo(const Board& board)
                                       (targetType == Piece::ROOK && directionIndex < 4) ||
                                       (targetType == Piece::BISHOP && directionIndex >= 4);
 
-                if (isSlidingPiece)
+                if (isSlidingPiece && potentialPinnedPieceSquare != -1)
                 {
-                    if (potentialPinnedPieceSquare != -1)
-                    {
-                        // Found a pinned piece
-                        legalMoveInfo.SetPiecePinned(potentialPinnedPieceSquare, pinnedPieceLegalMovesBitboard);
-                    }
+                    // Found a pinned piece
+                    pinnedPieceLegalMovesBitboard |= (1ULL << scanSquare);
+                    legalMoveInfo.SetPiecePinned(potentialPinnedPieceSquare, pinnedPieceLegalMovesBitboard);
                 }
                 break; // Encountered opponent piece, stop scanning
             }
@@ -540,38 +549,54 @@ std::vector<Move> GenerateMoves(const Board& board)
 
     const LegalMoveInfo friendlyLegalMoveInfo = GenerateLegalMoveInfo(board);
 
-    for (int pieceSquare : board.GetPawnPlacements(isWhiteToMove))
-    {
-        Piece::Piece piece = board.GetPieceAtSquare(pieceSquare);
-        GeneratePawnMovesForPiece(board, piece, pieceSquare, moves);
-    }
-    for (int pieceSquare : board.GetKnightPlacements(isWhiteToMove))
-    {
-        Piece::Piece piece = board.GetPieceAtSquare(pieceSquare);
-        GenerateKnightMovesForPiece(board, piece, pieceSquare, moves);
-    }
-    for (int pieceSquare : board.GetBishopPlacements(isWhiteToMove))
-    {
-        Piece::Piece piece = board.GetPieceAtSquare(pieceSquare);
-        GenerateSlidingMovesForPiece(board, piece, pieceSquare, moves);
-    }
-    for (int pieceSquare : board.GetRookPlacements(isWhiteToMove))
-    {
-        Piece::Piece piece = board.GetPieceAtSquare(pieceSquare);
-        GenerateSlidingMovesForPiece(board, piece, pieceSquare, moves);
-    }
-    for (int pieceSquare : board.GetQueenPlacements(isWhiteToMove))
-    {
-        Piece::Piece piece = board.GetPieceAtSquare(pieceSquare);
-        GenerateSlidingMovesForPiece(board, piece, pieceSquare, moves);
-    }
     {
         int pieceSquare = board.GetKingSquare(isWhiteToMove);
         Piece::Piece piece = board.GetPieceAtSquare(pieceSquare);
         GenerateKingMovesForPiece(board, piece, pieceSquare, moves);
     }
+    if (!friendlyLegalMoveInfo.KingInDoubleCheck())
+    {
+        // Generate moves for other pieces
+        for (int pieceSquare : board.GetPawnPlacements(isWhiteToMove))
+        {
+            Piece::Piece piece = board.GetPieceAtSquare(pieceSquare);
+            GeneratePawnMovesForPiece(board, piece, pieceSquare, moves);
+        }
+        for (int pieceSquare : board.GetKnightPlacements(isWhiteToMove))
+        {
+            Piece::Piece piece = board.GetPieceAtSquare(pieceSquare);
+            GenerateKnightMovesForPiece(board, piece, pieceSquare, moves);
+        }
+        for (int pieceSquare : board.GetBishopPlacements(isWhiteToMove))
+        {
+            Piece::Piece piece = board.GetPieceAtSquare(pieceSquare);
+            GenerateSlidingMovesForPiece(board, piece, pieceSquare, moves);
+        }
+        for (int pieceSquare : board.GetRookPlacements(isWhiteToMove))
+        {
+            Piece::Piece piece = board.GetPieceAtSquare(pieceSquare);
+            GenerateSlidingMovesForPiece(board, piece, pieceSquare, moves);
+        }
+        for (int pieceSquare : board.GetQueenPlacements(isWhiteToMove))
+        {
+            Piece::Piece piece = board.GetPieceAtSquare(pieceSquare);
+            GenerateSlidingMovesForPiece(board, piece, pieceSquare, moves);
+        }
+    }
 
-    return moves;
+    std::vector<Move> legalMoves;
+    legalMoves.reserve(moves.size());
+    legalMoves.clear();
+
+    for (const Move& move : moves)
+    {
+        if (friendlyLegalMoveInfo.MoveIsLegal(board, move))
+        {
+            legalMoves.push_back(move);
+        }
+    }
+
+    return legalMoves;
 }
 
 } // namespace Gluon::MoveGenerator
