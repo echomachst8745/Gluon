@@ -22,17 +22,13 @@ struct LegalMoveInfo
 
     void SetSquareAsAttacked(int square) noexcept;
 
-    void AddChecker(int square);
-
-    void AddSlidingChecker(int square, std::uint64_t blockCheckBitboard) noexcept;
+    void AddChecker(int square, std::uint64_t removeBlockCheckBitboard);
 
     void SetPiecePinned(int square, std::uint64_t legalMovesBitboard) noexcept;
 
     bool KingInCheck() const noexcept;
 
     bool KingInDoubleCheck() const noexcept;
-
-    bool MoveIsIllegal(const Board& board, const MoveGenerator::Move& move) const noexcept;
 };
 
 } // namespace Gluon

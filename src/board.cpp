@@ -36,6 +36,11 @@ bool Board::HasCastlingRight(std::uint8_t castlingRight) const noexcept
     return (castlingRights & castlingRight) == castlingRight;
 }
 
+const std::array<Piece::Piece, BoardHelpers::NUM_SQUARES>& Board::GetSquares() const noexcept
+{
+    return squares;
+}
+
 const std::vector<int>& Board::GetPawnPlacements(bool forWhite) const noexcept
 {
     return piecePlacements.GetPawnBucket(forWhite);

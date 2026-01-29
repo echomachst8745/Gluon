@@ -8,7 +8,8 @@
 namespace Gluon::Debug {
 
 std::uint64_t Perft(int depth, Board& board);
+std::uint64_t PerftBulk(int depth, Board& board);
 
-std::uint64_t RunPerftOnPosition(const std::string& fen, int depth, bool verbose = false);
+std::uint64_t RunPerftOnPosition(const std::string& fen, int depth, bool bulkCount = true, bool verbose = false);
 
 } // namespace Gluon::Debug

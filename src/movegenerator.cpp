@@ -346,7 +346,7 @@ LegalMoveInfo GenerateLegalMoveInfo(const Board& board)
 
             if (attackSquare == friendlyKingSquare)
             {
-                legalMoveInfo.AddChecker(pieceSquare);
+                legalMoveInfo.AddChecker(pieceSquare, (1ULL << pieceSquare));
             }
         }
     }
@@ -362,7 +362,7 @@ LegalMoveInfo GenerateLegalMoveInfo(const Board& board)
 
             if (attackSquare == friendlyKingSquare)
             {
-                legalMoveInfo.AddChecker(pieceSquare);
+                legalMoveInfo.AddChecker(pieceSquare, (1ULL << pieceSquare));
             }
         }
     }
@@ -379,6 +379,7 @@ LegalMoveInfo GenerateLegalMoveInfo(const Board& board)
             const int maxSteps = NUMBER_OF_SQUARES_TO_EDGE[pieceSquare][directionIndex];
 
             std::uint64_t removeBlockCheckBitboard = (1ULL << pieceSquare);
+            bool kingCheckFound = false;
 
             for (int step = 1; step <= maxSteps; ++step)
             {
@@ -388,9 +389,12 @@ LegalMoveInfo GenerateLegalMoveInfo(const Board& board)
 
                 legalMoveInfo.SetSquareAsAttacked(attackSquare);
 
-                if (attackSquare == friendlyKingSquare)
+                if (attackSquare == friendlyKingSquare && !kingCheckFound)
                 {
-                    legalMoveInfo.AddSlidingChecker(pieceSquare, removeBlockCheckBitboard);
+                    legalMoveInfo.AddChecker(pieceSquare, removeBlockCheckBitboard);
+                    kingCheckFound = true;
+
+                    continue;
                 }
 
                 Piece::Piece targetPiece = board.GetPieceAtSquare(attackSquare);
@@ -414,6 +418,7 @@ LegalMoveInfo GenerateLegalMoveInfo(const Board& board)
             const int maxSteps = NUMBER_OF_SQUARES_TO_EDGE[pieceSquare][directionIndex];
 
             std::uint64_t removeBlockCheckBitboard = (1ULL << pieceSquare);
+            bool kingCheckFound = false;
 
             for (int step = 1; step <= maxSteps; ++step)
             {
@@ -423,9 +428,11 @@ LegalMoveInfo GenerateLegalMoveInfo(const Board& board)
 
                 legalMoveInfo.SetSquareAsAttacked(attackSquare);
 
-                if (attackSquare == friendlyKingSquare)
+                if (attackSquare == friendlyKingSquare && !kingCheckFound)
                 {
-                    legalMoveInfo.AddSlidingChecker(pieceSquare, removeBlockCheckBitboard);
+                    legalMoveInfo.AddChecker(pieceSquare, removeBlockCheckBitboard);
+                    kingCheckFound = true;
+                    continue;
                 }
 
                 Piece::Piece targetPiece = board.GetPieceAtSquare(attackSquare);
@@ -449,6 +456,7 @@ LegalMoveInfo GenerateLegalMoveInfo(const Board& board)
             const int maxSteps = NUMBER_OF_SQUARES_TO_EDGE[pieceSquare][directionIndex];
 
             std::uint64_t removeBlockCheckBitboard = (1ULL << pieceSquare);
+            bool kingCheckFound = false;
 
             for (int step = 1; step <= maxSteps; ++step)
             {
@@ -458,9 +466,11 @@ LegalMoveInfo GenerateLegalMoveInfo(const Board& board)
 
                 legalMoveInfo.SetSquareAsAttacked(attackSquare);
 
-                if (attackSquare == friendlyKingSquare)
+                if (attackSquare == friendlyKingSquare && !kingCheckFound)
                 {
-                    legalMoveInfo.AddSlidingChecker(pieceSquare, removeBlockCheckBitboard);
+                    legalMoveInfo.AddChecker(pieceSquare, removeBlockCheckBitboard);
+                    kingCheckFound = true;
+                    continue;
                 }
 
                 Piece::Piece targetPiece = board.GetPieceAtSquare(attackSquare);
@@ -537,7 +547,198 @@ LegalMoveInfo GenerateLegalMoveInfo(const Board& board)
     return legalMoveInfo;
 }
 
+bool MoveIsIllegal(const Board& board, const LegalMoveInfo& legalMoveInfo, const MoveGenerator::Move& move) noexcept
+{
+    const bool isWhiteToMove = board.IsWhiteToMove();
+    const int fromSquare = move.GetFromSquare();
+    const int toSquare = move.GetToSquare();
+    const Piece::Piece movingPiece = board.GetPieceAtSquare(fromSquare);
+    const int friendlyKingSquare = board.GetKingSquare(isWhiteToMove);
+
+    // If in double check, only king moves are legal
+    if (legalMoveInfo.KingInDoubleCheck())
+    {
+        if (Piece::GetType(movingPiece) != Piece::KING)
+        {
+            return true; // Illegal move
+        }
+    }
+
+    // King cannot castle out of, through, or into check
+    if (move.HasFlag(MoveValues::KING_CASTLE))
+    {
+        if (legalMoveInfo.KingInCheck())
+        {
+            return true; // Illegal move
+        }
+
+        if (isWhiteToMove)
+        {
+            // White kingside castling
+            if (legalMoveInfo.attackedSquaresBitboard & ((1ULL << BoardHelpers::FileRankToSquare(BoardHelpers::FILE_F, BoardHelpers::RANK_1)) |
+                                                         (1ULL << BoardHelpers::FileRankToSquare(BoardHelpers::FILE_G, BoardHelpers::RANK_1))))
+            {
+                return true; // Illegal move
+            }
+        }
+        else
+        {
+            // Black kingside castling
+            if (legalMoveInfo.attackedSquaresBitboard & ((1ULL << BoardHelpers::FileRankToSquare(BoardHelpers::FILE_F, BoardHelpers::RANK_8)) |
+                                                         (1ULL << BoardHelpers::FileRankToSquare(BoardHelpers::FILE_G, BoardHelpers::RANK_8))))
+            {
+                return true; // Illegal move
+            }
+        }
+    }
+    else if (move.HasFlag(MoveValues::QUEEN_CASTLE))
+    {
+        if (legalMoveInfo.KingInCheck())
+        {
+            return true; // Illegal move
+        }
+
+        if (isWhiteToMove)
+        {
+            // White queenside castling
+            if (legalMoveInfo.attackedSquaresBitboard & ((1ULL << BoardHelpers::FileRankToSquare(BoardHelpers::FILE_D, BoardHelpers::RANK_1)) |
+                                                         (1ULL << BoardHelpers::FileRankToSquare(BoardHelpers::FILE_C, BoardHelpers::RANK_1))))
+            {
+                return true; // Illegal move
+            }
+        }
+        else
+        {
+            // Black queenside castling
+            if (legalMoveInfo.attackedSquaresBitboard & ((1ULL << BoardHelpers::FileRankToSquare(BoardHelpers::FILE_D, BoardHelpers::RANK_8)) |
+                                                         (1ULL << BoardHelpers::FileRankToSquare(BoardHelpers::FILE_C, BoardHelpers::RANK_8))))
+            {
+                return true; // Illegal move
+            }
+        }
+    }
+
+    // If the moving piece is pinned, check if the move is along the pin line
+    if (legalMoveInfo.pinnedPiecesBitboard & (1ULL << fromSquare))
+    {
+        std::uint64_t legalMovesBitboard = legalMoveInfo.pinnedPieceLegalMovesBitboards[fromSquare];
+        if (!(legalMovesBitboard & (1ULL << toSquare)))
+        {
+            return true; // Illegal move
+        }
+    }
+
+    // If in single check, the move must block or capture the checker
+    if (legalMoveInfo.KingInCheck() && Piece::GetType(movingPiece) != Piece::KING)
+    {
+        if (!(legalMoveInfo.removeBlockCheckBitboard & (1ULL << toSquare)))
+        {
+            return true; // Illegal move
+        }
+    }
+
+    if (Piece::GetType(movingPiece) == Piece::KING)
+    {
+        // King cannot move to an attacked square
+        if (legalMoveInfo.attackedSquaresBitboard & (1ULL << toSquare))
+        {
+            return true; // Illegal move
+        }
+    }
+
+    if (move.HasFlag(MoveValues::EN_PASSANT))
+    {
+        auto boardSquares = board.GetSquares();
+
+        boardSquares[move.GetFromSquare()] = Piece::NONE;
+        boardSquares[move.GetToSquare()] = movingPiece;
+        const int capturedPawnSquare = isWhiteToMove ? (move.GetToSquare() + SOUTH_DIRECTION) : (move.GetToSquare() + NORTH_DIRECTION);
+        boardSquares[capturedPawnSquare] = Piece::NONE;
+
+        for (int directionIndex = 0; directionIndex < 8; ++directionIndex)
+        {
+            const int directionOffset = DIRECTION_OFFSETS[directionIndex];
+            const int maxSteps = NUMBER_OF_SQUARES_TO_EDGE[friendlyKingSquare][directionIndex];
+
+            for (int step = 1; step <= maxSteps; ++step)
+            {
+                const int scanSquare = friendlyKingSquare + step * directionOffset;
+
+                Piece::Piece targetPiece = boardSquares[scanSquare];
+                if (targetPiece == Piece::NONE)
+                {
+                    continue;
+                }
+
+                if (Piece::IsWhite(targetPiece) == isWhiteToMove)
+                {
+                    // Friendly piece
+                    break; // Blocked by friendly piece
+                }
+                else
+                {
+                    // Opponent piece
+                    auto targetType = Piece::GetType(targetPiece);
+                    bool isSlidingPiece = (targetType == Piece::QUEEN) ||
+                                          (targetType == Piece::ROOK && directionIndex < 4) ||
+                                          (targetType == Piece::BISHOP && directionIndex >= 4);
+
+                    if (isSlidingPiece)
+                    {
+                        return true; // Illegal move
+                    }
+                    break; // Encountered opponent piece, stop scanning
+                }
+            }
+        }
+    }
+
+    return false; // Move is legal
+}
+
 } // Anonymous namespace for helper functions
+
+std::vector<Move> GeneratePseudoLegalMoves(const Board& board)
+{
+    std::vector<Move> moves;
+    moves.reserve(256); // Preallocate space for moves
+    moves.clear();
+
+    const bool isWhiteToMove = board.IsWhiteToMove();
+
+    {
+        int pieceSquare = board.GetKingSquare(isWhiteToMove);
+        Piece::Piece piece = board.GetPieceAtSquare(pieceSquare);
+        GenerateKingMovesForPiece(board, piece, pieceSquare, moves);
+    }
+    for (int pieceSquare : board.GetPawnPlacements(isWhiteToMove))
+    {
+        Piece::Piece piece = board.GetPieceAtSquare(pieceSquare);
+        GeneratePawnMovesForPiece(board, piece, pieceSquare, moves);
+    }
+    for (int pieceSquare : board.GetKnightPlacements(isWhiteToMove))
+    {
+        Piece::Piece piece = board.GetPieceAtSquare(pieceSquare);
+        GenerateKnightMovesForPiece(board, piece, pieceSquare, moves);
+    }
+    for (int pieceSquare : board.GetBishopPlacements(isWhiteToMove))
+    {
+        Piece::Piece piece = board.GetPieceAtSquare(pieceSquare);
+        GenerateSlidingMovesForPiece(board, piece, pieceSquare, moves);
+    }
+    for (int pieceSquare : board.GetRookPlacements(isWhiteToMove))
+    {
+        Piece::Piece piece = board.GetPieceAtSquare(pieceSquare);
+        GenerateSlidingMovesForPiece(board, piece, pieceSquare, moves);
+    }
+    for (int pieceSquare : board.GetQueenPlacements(isWhiteToMove))
+    {
+        Piece::Piece piece = board.GetPieceAtSquare(pieceSquare);
+        GenerateSlidingMovesForPiece(board, piece, pieceSquare, moves);
+    }
+
+    return moves;
+}
 
 std::vector<Move> GenerateMoves(const Board& board)
 {
@@ -590,7 +791,7 @@ std::vector<Move> GenerateMoves(const Board& board)
 
     for (const Move& move : moves)
     {
-        if (!friendlyLegalMoveInfo.MoveIsIllegal(board, move))
+        if (!MoveIsIllegal(board, friendlyLegalMoveInfo, move))
         {
             legalMoves.push_back(move);
         }

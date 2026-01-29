@@ -25,6 +25,8 @@ public:
 
     bool HasCastlingRight(std::uint8_t castlingRight) const noexcept;
 
+    const std::array<Piece::Piece, BoardHelpers::NUM_SQUARES>& GetSquares() const noexcept;
+
     const std::vector<int>& GetPawnPlacements(bool forWhite) const noexcept;
     const std::vector<int>& GetKnightPlacements(bool forWhite) const noexcept;
     const std::vector<int>& GetBishopPlacements(bool forWhite) const noexcept;

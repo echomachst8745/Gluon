@@ -18,6 +18,8 @@ constexpr int SOUTH_EAST_DIRECTION             = DIRECTION_OFFSETS[5];
 constexpr int NORTH_EAST_DIRECTION             = DIRECTION_OFFSETS[6];
 constexpr int SOUTH_WEST_DIRECTION             = DIRECTION_OFFSETS[7];
 
+std::vector<Move> GeneratePseudoLegalMoves(const Board& board);
+
 std::vector<Move> GenerateMoves(const Board& board);
 
 } // namespace Gluon::MoveGenerator
