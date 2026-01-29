@@ -25,12 +25,12 @@ bool Move::IsValidMove() const noexcept
 
 int Move::GetFromSquare() const noexcept
 {
-    return static_cast<int>((move & FROM_SQUARE_MASK) >> FROM_SQUARE_SHIFT);
+    return (int)((move & FROM_SQUARE_MASK) >> FROM_SQUARE_SHIFT);
 }
 
 int Move::GetToSquare() const noexcept
 {
-    return static_cast<int>((move & TO_SQUARE_MASK) >> TO_SQUARE_SHIFT);
+    return (int)((move & TO_SQUARE_MASK) >> TO_SQUARE_SHIFT);
 }
 
 bool Move::HasFlag(std::uint16_t flag) const noexcept

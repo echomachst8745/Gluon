@@ -6,6 +6,7 @@
 #include <array>
 #include <algorithm>
 #include <cmath>
+#include <iostream>
 
 namespace Gluon::MoveGenerator {
 
@@ -346,7 +347,16 @@ LegalMoveInfo GenerateLegalMoveInfo(const Board& board)
 
             if (attackSquare == friendlyKingSquare)
             {
-                legalMoveInfo.AddChecker(pieceSquare, (1ULL << pieceSquare));
+                std::uint64_t removeBlockCheckBitboard = (1ULL << pieceSquare);
+
+                int possibleEnPassantSquare = pieceSquare + (isWhiteToMove ? NORTH_DIRECTION : SOUTH_DIRECTION);
+                if (possibleEnPassantSquare == board.GetEnPassantSquare())
+                {
+                    // En passant capture also attacks the king
+                    removeBlockCheckBitboard |= (1ULL << possibleEnPassantSquare);
+                }
+
+                legalMoveInfo.AddChecker(pieceSquare, removeBlockCheckBitboard);
             }
         }
     }
@@ -506,10 +516,11 @@ LegalMoveInfo GenerateLegalMoveInfo(const Board& board)
         {
             const int scanSquare = friendlyKingSquare + step * directionOffset;
 
+            pinnedPieceLegalMovesBitboard |= (1ULL << scanSquare);
+
             Piece::Piece targetPiece = board.GetPieceAtSquare(scanSquare);
             if (targetPiece == Piece::NONE)
             {
-                pinnedPieceLegalMovesBitboard |= (1ULL << scanSquare);
                 continue;
             }
 
@@ -536,7 +547,6 @@ LegalMoveInfo GenerateLegalMoveInfo(const Board& board)
                 if (isSlidingPiece && potentialPinnedPieceSquare != -1)
                 {
                     // Found a pinned piece
-                    pinnedPieceLegalMovesBitboard |= (1ULL << scanSquare);
                     legalMoveInfo.SetPiecePinned(potentialPinnedPieceSquare, pinnedPieceLegalMovesBitboard);
                 }
                 break; // Encountered opponent piece, stop scanning
@@ -631,6 +641,14 @@ bool MoveIsIllegal(const Board& board, const LegalMoveInfo& legalMoveInfo, const
     // If in single check, the move must block or capture the checker
     if (legalMoveInfo.KingInCheck() && Piece::GetType(movingPiece) != Piece::KING)
     {
+        if (Piece::GetType(movingPiece) != Piece::PAWN)
+        {
+            if (toSquare == board.GetEnPassantSquare())
+            {
+                return true; // Illegal move
+            }
+        }
+
         if (!(legalMoveInfo.removeBlockCheckBitboard & (1ULL << toSquare)))
         {
             return true; // Illegal move

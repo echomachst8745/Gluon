@@ -448,7 +448,7 @@ void Board::UnmakeLastMove()
     {
         squares[toSquare]   = Piece::NONE;
         squares[fromSquare] = movedPiece;
-        piecePlacements.MovePiece(toSquare, fromSquare);
+        piecePlacements.MoveAndChangePiece(toSquare, fromSquare, movedPiece);
     }
     else if (move.HasFlag(MoveGenerator::MoveValues::KING_CASTLE) || move.HasFlag(MoveGenerator::MoveValues::QUEEN_CASTLE))
     {
