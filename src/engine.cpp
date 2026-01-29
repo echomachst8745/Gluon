@@ -1,5 +1,7 @@
 #include "engine.h"
 #include "movegenerator.h"
+#include "search.h"
+#include "debug.h"
 
 #include <string>
 #include <sstream>
@@ -62,9 +64,12 @@ void Engine::HandleUCIPosition(const std::string& positionCommand)
     std::stringstream ss(positionCommand);
 
     for (std::string token; ss >> token;) {
-        if (token == "startpos") {
+        if (token == "startpos")
+        {
             board.SetupWithFEN(Gluon::BoardHelpers::STARTING_FEN);
-        } else if (token == "fen") {
+        }
+        else if (token == "fen")
+        {
             std::string fen;
             for (int i = 0; i < 6; ++i)
             {
@@ -74,7 +79,9 @@ void Engine::HandleUCIPosition(const std::string& positionCommand)
             }
             fen.pop_back(); // Remove trailing space
             board.SetupWithFEN(fen);
-        } else if (token == "moves") {
+        }
+        else if (token == "moves")
+        {
             for (std::string moveStr; ss >> moveStr;)
             {
                 MoveGenerator::GenerateMoves(board);
@@ -94,14 +101,27 @@ void Engine::HandleUCIPosition(const std::string& positionCommand)
 
 void Engine::HandleUCIGo(const std::string& goCommand)
 {
-    auto moves = MoveGenerator::GenerateMoves(board);
+    std::stringstream ss(goCommand);
 
-    if (moves.empty())
+    for (std::string token; ss >> token;)
     {
-        return;
-    }
+        if (token == "perft")
+        {
+            int depth;
+            ss >> depth;
+            Debug::RunPerft(board, depth, true, true);
+        }
+        else
+        {
+            auto moves = MoveGenerator::GenerateMoves(board);
+            if (moves.empty())
+            {
+                return;
+            }
 
-    std::cout << "bestmove " << moves[rand() % moves.size()].ToUCIString() << std::endl;
+            std::cout << "bestmove " << moves[0].ToUCIString() << std::endl;
+        }
+    }
 }
 
 void Engine::HandleUCIStop()

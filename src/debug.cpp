@@ -12,7 +12,7 @@ namespace Gluon::Debug {
 
 namespace { // Anonymous namespace for helper functions
 
-std::uint64_t PerftDivide(int depth, Board& board)
+std::uint64_t PerftDivide(int depth, Board& board, bool bulkCount)
 {
     auto moves = MoveGenerator::GenerateMoves(board);
     std::uint64_t totalNodes = 0;
@@ -20,7 +20,7 @@ std::uint64_t PerftDivide(int depth, Board& board)
     for (const auto& move : moves)
     {
         board.MakeMove(move);
-        std::uint64_t nodes = Perft(depth - 1, board);
+        std::uint64_t nodes = Perft(depth - 1, board, bulkCount);
         board.UnmakeLastMove();
 
         std::cout << move.ToUCIString() << ": " << nodes << std::endl;
@@ -59,10 +59,15 @@ std::uint64_t Perft(int depth, Board& board, bool bulkCount)
     return nodes;
 }
 
+std::uint64_t RunPerft(Board& board, int depth, bool bulkCount, bool verbose)
+{
+    return verbose ? PerftDivide(depth, board, bulkCount) : Perft(depth, board, bulkCount);
+}
+
 std::uint64_t RunPerftOnPosition(const std::string& fen, int depth, bool bulkCount, bool verbose)
 {
     Board board(fen);
-    return verbose ? PerftDivide(depth, board) : Perft(depth, board, bulkCount);
+    return verbose ? PerftDivide(depth, board, bulkCount) : Perft(depth, board, bulkCount);
 }
 
 } // namespace Gluon::Debug
