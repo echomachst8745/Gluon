@@ -36,7 +36,7 @@ std::uint64_t PerftDivide(int depth, Board& board, bool bulkCount)
 
 std::uint64_t Perft(int depth, Board& board, bool bulkCount)
 {
-    if (!bulkCount && depth == 0)
+    if (depth == 0)
     {
         return 1ULL;
     }

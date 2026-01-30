@@ -113,13 +113,10 @@ void Engine::HandleUCIGo(const std::string& goCommand)
         }
         else
         {
-            auto moves = MoveGenerator::GenerateMoves(board);
-            if (moves.empty())
-            {
-                return;
-            }
+            auto searchResult = Search::Search(board, 4);
+            auto bestMove = searchResult.bestMove;
 
-            std::cout << "bestmove " << moves[0].ToUCIString() << std::endl;
+            std::cout << "bestmove " << bestMove.ToUCIString() << std::endl;
         }
     }
 }
