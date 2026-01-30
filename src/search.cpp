@@ -9,42 +9,98 @@
 
 namespace Gluon::Search {
 
-SearchResult Search(Board& board, int depth)
+namespace { // Anonymous namespace for helper functions
+
+SearchResult AlphaBetaMinSearch(Board& board, int depth, double alpha, double beta)
 {
+    if (depth == 0)
+    {
+        return SearchResult{ MoveGenerator::Move{}, -Evaluate::Evaluate(board) };
+    }
+
     auto moves = MoveGenerator::GenerateMoves(board);
 
     if (moves.empty())
     {
-        return SearchResult{ MoveGenerator::Move{}, std::numeric_limits<double>::lowest() };
-    }
-    
-    if (depth == 0)
-    {
-        return SearchResult{ moves[rand() % moves.size()], Evaluate::Evaluate(board) };
+        if (board.IsPlayerInCheck())
+        {
+            return SearchResult{ MoveGenerator::Move{}, std::numeric_limits<double>::max() }; // Checkmate
+        }
+
+        return SearchResult{ MoveGenerator::Move{}, 0.0 }; // Stalemate
     }
 
-    std::vector<MoveGenerator::Move> bestMoves;
-    bestMoves.reserve(moves.size());
-    bestMoves.clear();
+    MoveGenerator::Move bestMove = moves[rand() % moves.size()];
+    double bestEvaluation = std::numeric_limits<double>::max();
+    for (const auto& move : moves)
+    {
+        board.MakeMove(move);
+        double evaluation = AlphaBetaMaxSearch(board, depth - 1, alpha, beta).evaluation;
+        board.UnmakeLastMove();
+        if (evaluation < bestEvaluation)
+        {
+            bestEvaluation = evaluation;
+            bestMove = move;
+
+            if (evaluation < beta)
+            {
+                beta = evaluation;
+            }
+        }
+        if (evaluation <= alpha)
+        {
+            return SearchResult{ move, evaluation }; // Alpha cutoff
+        }
+    }
+
+    return SearchResult{ bestMove, bestEvaluation };
+}
+
+} // Anonymous namespace for helper functions
+
+SearchResult AlphaBetaMaxSearch(Board& board, int depth, double alpha, double beta)
+{
+    if (depth == 0)
+    {
+        return SearchResult{ MoveGenerator::Move{}, Evaluate::Evaluate(board) };
+    }
+
+    auto moves = MoveGenerator::GenerateMoves(board);
+
+    if (moves.empty())
+    {
+        if (board.IsPlayerInCheck())
+        {
+            return SearchResult{ MoveGenerator::Move{}, std::numeric_limits<double>::lowest() }; // Checkmate
+        }
+        
+        return SearchResult{ MoveGenerator::Move{}, 0.0 }; // Stalemate
+    }
+
+    MoveGenerator::Move bestMove = moves[rand() % moves.size()];
     double bestEvaluation = std::numeric_limits<double>::lowest();
     for (const auto& move : moves)
     {
         board.MakeMove(move);
-        double evaluation = -Search(board, depth - 1).evaluation;
+        double evaluation = AlphaBetaMinSearch(board, depth - 1, alpha, beta).evaluation;
         board.UnmakeLastMove();
         if (evaluation > bestEvaluation)
         {
             bestEvaluation = evaluation;
-            bestMoves.clear();
-            bestMoves.push_back(move);
+            bestMove = move;
+
+            if (evaluation > alpha)
+            {
+                alpha = evaluation;
+            }
         }
-        else if (evaluation == bestEvaluation)
+        if (evaluation >= beta)
         {
-            bestMoves.push_back(move);
+            return SearchResult{ move, evaluation }; // Beta cutoff
         }
     }
 
-    return SearchResult{ bestMoves[rand() % bestMoves.size()], bestEvaluation };
+    return SearchResult{ bestMove, bestEvaluation };
 }
 
 } // namespace Gluon::Search

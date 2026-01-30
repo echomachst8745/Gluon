@@ -11,6 +11,6 @@ struct SearchResult
     double evaluation;
 };
 
-SearchResult Search(Board& board, int depth);
+SearchResult AlphaBetaMaxSearch(Board& board, int depth, double alpha, double beta);
 
 } // namespace Gluon::Search

@@ -8,6 +8,7 @@
 #include <cstring>
 #include <iostream>
 #include <cstdlib>
+#include <limits>
 
 namespace Gluon::Engine {
 
@@ -84,9 +85,9 @@ void Engine::HandleUCIPosition(const std::string& positionCommand)
         {
             for (std::string moveStr; ss >> moveStr;)
             {
-                MoveGenerator::GenerateMoves(board);
+                auto moves = MoveGenerator::GeneratePseudoLegalMoves(board);
 
-                for (const MoveGenerator::Move& move : MoveGenerator::GenerateMoves(board))
+                for (const MoveGenerator::Move& move : moves)
                 {
                     if (move.ToUCIString() == moveStr)
                     {
@@ -113,7 +114,7 @@ void Engine::HandleUCIGo(const std::string& goCommand)
         }
         else
         {
-            auto searchResult = Search::Search(board, 4);
+            auto searchResult = Search::AlphaBetaMaxSearch(board, 8, std::numeric_limits<double>::lowest(), std::numeric_limits<double>::max());
             auto bestMove = searchResult.bestMove;
 
             std::cout << "bestmove " << bestMove.ToUCIString() << std::endl;
