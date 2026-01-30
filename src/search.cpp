@@ -22,7 +22,7 @@ SearchResult AlphaBetaMinSearch(Board& board, int depth, double alpha, double be
 
     if (moves.empty())
     {
-        if (board.IsPlayerInCheck())
+        if (true)
         {
             return SearchResult{ MoveGenerator::Move{}, std::numeric_limits<double>::max() }; // Checkmate
         }
@@ -69,7 +69,7 @@ SearchResult AlphaBetaMaxSearch(Board& board, int depth, double alpha, double be
 
     if (moves.empty())
     {
-        if (board.IsPlayerInCheck())
+        if (true)
         {
             return SearchResult{ MoveGenerator::Move{}, std::numeric_limits<double>::lowest() }; // Checkmate
         }
