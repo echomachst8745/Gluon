@@ -147,7 +147,7 @@ void Engine::HandleUCIGo(const std::string& goCommand)
 
     searchThread = std::thread([this]()
     {
-        lastSearchResult = Search::StartSearch(board);
+        lastSearchResult = Search::StartSearch(board, Search::SearchMaxTimeSeconds == std::numeric_limits<double>::infinity());
         searchInProgress = false;
         std::cout << "bestmove " << lastSearchResult.bestMove.ToUCIString() << std::endl;
     });

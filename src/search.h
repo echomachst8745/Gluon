@@ -23,6 +23,6 @@ struct SearchResult
 
 bool SearchShouldStop();
 
-SearchResult StartSearch(Board& board);
+SearchResult StartSearch(Board& board, bool fixedDepth);
 
 } // namespace Gluon::Search
