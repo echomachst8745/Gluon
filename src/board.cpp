@@ -3,6 +3,7 @@
 #include "piece.h"
 #include "move.h"
 #include "movegenerator.h"
+#include "zobrist.h"
 
 #include <algorithm>
 #include <string>
@@ -54,6 +55,11 @@ bool Board::IsCurrentPlayerInCheck() const
 int Board::GetFullmoveNumber() const noexcept
 {
     return fullmoveNumber;
+}
+
+std::uint64_t Board::GetZobristHash() const noexcept
+{
+    return zobristHash;
 }
 
 const std::vector<int>& Board::GetPawnPlacements(bool forWhite) const noexcept
@@ -224,6 +230,9 @@ void Board::SetupWithFEN(const std::string& fen)
     {
         throw std::invalid_argument("Invalid fullmove number in FEN: " + fullmoveNumber);
     }
+
+    // Compute initial Zobrist hash
+    zobristHash = ComputeZobristHash();
 }
 
 const std::string Board::GetBoardString(bool whitePOV) const
@@ -420,6 +429,9 @@ void Board::MakeMove(const MoveGenerator::Move& move)
 
     // Switch side to move
     isWhiteToMove = !isWhiteToMove;
+
+    // Update Zobrist hash
+    zobristHash = ComputeZobristHash();
 }
 
 void Board::UnmakeLastMove()
@@ -495,6 +507,38 @@ void Board::UnmakeLastMove()
         squares[capturedSquare] = undoMoveState.capturedPiece;
         piecePlacements.AddPiece(undoMoveState.capturedPiece, capturedSquare);
     }
+
+    // Update Zobrist hash
+    zobristHash = ComputeZobristHash();
+}
+
+std::uint64_t Board::ComputeZobristHash()
+{
+    std::uint64_t hash = 0;
+
+    for (int square = 0; square < BoardHelpers::NUM_SQUARES; ++square)
+    {
+        Piece::Piece piece = squares[square];
+        if (piece != Piece::NONE)
+        {
+            const int pieceIndex = Zobrist::PieceTypeToIndex(piece);
+            hash ^= Zobrist::GlobalZobristHashTable.pieceSquareHash[pieceIndex][square];
+        }
+    }
+
+    hash ^= Zobrist::GlobalZobristHashTable.castlingRightsHash[castlingRights & BoardHelpers::CASTLING_RIGHTS_MASK];
+    if (enPassantSquare != BoardHelpers::NO_EN_PASSANT)
+    {
+        const int enPassantFile = BoardHelpers::GetFileFromSquare(enPassantSquare);
+        hash ^= Zobrist::GlobalZobristHashTable.enPassantFileHash[enPassantFile];
+    }
+
+    if (!isWhiteToMove)
+    {
+        hash ^= Zobrist::GlobalZobristHashTable.sideToMoveHash;
+    }
+
+    return hash;
 }
 
 } // namespace Gluon

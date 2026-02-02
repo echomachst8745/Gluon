@@ -4,6 +4,7 @@
 #include "piece.h"
 #include "pieceplacements.h"
 #include "undomovestate.h"
+#include "zobrist.h"
 
 #include <string>
 #include <cstdint>
@@ -32,6 +33,8 @@ public:
 
     int GetFullmoveNumber() const noexcept;
 
+    std::uint64_t GetZobristHash() const noexcept;
+
     const std::vector<int>& GetPawnPlacements(bool forWhite) const noexcept;
     const std::vector<int>& GetKnightPlacements(bool forWhite) const noexcept;
     const std::vector<int>& GetBishopPlacements(bool forWhite) const noexcept;
@@ -52,6 +55,8 @@ public:
 
     void UnmakeLastMove();
 
+    std::uint64_t ComputeZobristHash();
+
 private:
     std::array<Piece::Piece, BoardHelpers::NUM_SQUARES> squares;
     PiecePlacements piecePlacements;
@@ -66,6 +71,8 @@ private:
 
     int halfmoveClock;
     int fullmoveNumber;
+
+    std::uint64_t zobristHash;
 
     std::stack<UndoMoveState> undoMoveStateStack;
 };
