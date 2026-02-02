@@ -194,8 +194,6 @@ bool SearchShouldStop()
 
 SearchResult StartSearch(Board& board, bool fixedDepth)
 {
-    transpositionTable.Clear();
-
     SearchStartTime = std::chrono::steady_clock::now();
     SearchStopped = false;
 
