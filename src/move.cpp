@@ -75,32 +75,50 @@ bool Move::IsPromotion() const noexcept
 }
 
 const std::string Move::ToUCIString() const noexcept
+{
+    char promotionChar = '\0';
+    switch (move & FLAG_MASK)
     {
-        char promotionChar = '\0';
-        switch (move & FLAG_MASK)
-        {
-            case KNIGHT_PROMOTION:
-            case KNIGHT_PROMOTION_CAPTURE:
-                promotionChar = 'n';
-                break;
-            case BISHOP_PROMOTION:
-            case BISHOP_PROMOTION_CAPTURE:
-                promotionChar = 'b';
-                break;
-            case ROOK_PROMOTION:
-            case ROOK_PROMOTION_CAPTURE:
-                promotionChar = 'r';
-                break;
-            case QUEEN_PROMOTION:
-            case QUEEN_PROMOTION_CAPTURE:
-                promotionChar = 'q';
-                break;
+        case KNIGHT_PROMOTION:
+        case KNIGHT_PROMOTION_CAPTURE:
+            promotionChar = 'n';
+            break;
+        case BISHOP_PROMOTION:
+        case BISHOP_PROMOTION_CAPTURE:
+            promotionChar = 'b';
+            break;
+        case ROOK_PROMOTION:
+        case ROOK_PROMOTION_CAPTURE:
+            promotionChar = 'r';
+            break;
+        case QUEEN_PROMOTION:
+        case QUEEN_PROMOTION_CAPTURE:
+            promotionChar = 'q';
+            break;
 
-            default:
-                break;
-        }
-
-        return BoardHelpers::SquareToCoord(GetFromSquare()) + BoardHelpers::SquareToCoord(GetToSquare()) + (promotionChar ? std::string(1, promotionChar) : "");
+        default:
+            break;
     }
+
+    return BoardHelpers::SquareToCoord(GetFromSquare()) + BoardHelpers::SquareToCoord(GetToSquare()) + (promotionChar ? std::string(1, promotionChar) : "");
+}
+
+void MoveList::Clear()
+{
+    moveCount = 0;
+}
+
+void MoveList::AddMove(const Move& move)
+{
+    if (moveCount < MAX_MOVES_PER_POSITION)
+    {
+        moves[moveCount++] = move;
+    }
+}
+
+bool MoveList::IsEmpty() const noexcept
+{
+    return moveCount == 0;
+}
 
 } // namespace Gluon::MoveGenerator

@@ -41,6 +41,21 @@ const std::array<Piece::Piece, BoardHelpers::NUM_SQUARES>& Board::GetSquares() c
     return squares;
 }
 
+void Board::SetCurrentPlayerInCheck(bool inCheck)
+{
+    currentPlayerInCheck = inCheck;
+}
+
+bool Board::IsCurrentPlayerInCheck() const
+{
+    return currentPlayerInCheck;
+}
+
+int Board::GetFullmoveNumber() const noexcept
+{
+    return fullmoveNumber;
+}
+
 const std::vector<int>& Board::GetPawnPlacements(bool forWhite) const noexcept
 {
     return piecePlacements.GetPawnBucket(forWhite);
@@ -69,21 +84,12 @@ const std::vector<int>& Board::GetQueenPlacements(bool forWhite) const noexcept
 int Board::GetKingSquare(bool forWhite) const
 {
     const auto& kingBucket = piecePlacements.GetKingBucket(forWhite);
-    if (kingBucket.empty())
-    {
-        throw std::runtime_error("No king found on the board for the specified color");
-    }
 
     return kingBucket[0];
 }
 
 Piece::Piece Board::GetPieceAtSquare(int square) const
 {
-    if (!BoardHelpers::IsValidSquare(square))
-    {
-        throw std::out_of_range("Square index out of range: " + std::to_string(square));
-    }
-
     return squares[square];
 }
 
@@ -102,6 +108,7 @@ void Board::Clear()
     enPassantSquare = BoardHelpers::NO_EN_PASSANT;
     halfmoveClock   = 0;
     fullmoveNumber  = 1;
+    currentPlayerInCheck = false;
 }
 
 void Board::SetupWithFEN(const std::string& fen)

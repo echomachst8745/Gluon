@@ -27,6 +27,11 @@ public:
 
     const std::array<Piece::Piece, BoardHelpers::NUM_SQUARES>& GetSquares() const noexcept;
 
+    void SetCurrentPlayerInCheck(bool inCheck);
+    bool IsCurrentPlayerInCheck() const;
+
+    int GetFullmoveNumber() const noexcept;
+
     const std::vector<int>& GetPawnPlacements(bool forWhite) const noexcept;
     const std::vector<int>& GetKnightPlacements(bool forWhite) const noexcept;
     const std::vector<int>& GetBishopPlacements(bool forWhite) const noexcept;
@@ -56,6 +61,8 @@ private:
     std::uint8_t castlingRights;
 
     int enPassantSquare;
+
+    bool currentPlayerInCheck;
 
     int halfmoveClock;
     int fullmoveNumber;

@@ -9,6 +9,8 @@
 #include <iostream>
 #include <cstdlib>
 #include <limits>
+#include <thread>
+#include <atomic>
 
 namespace Gluon::Engine {
 
@@ -85,10 +87,12 @@ void Engine::HandleUCIPosition(const std::string& positionCommand)
         {
             for (std::string moveStr; ss >> moveStr;)
             {
-                auto moves = MoveGenerator::GeneratePseudoLegalMoves(board);
+                auto moves = MoveGenerator::GenerateMoves(board);
 
-                for (const MoveGenerator::Move& move : moves)
+                for (int i = 0; i < moves.moveCount; ++i)
                 {
+                    const auto& move = moves.moves[i];
+
                     if (move.ToUCIString() == moveStr)
                     {
                         board.MakeMove(move);
@@ -112,19 +116,54 @@ void Engine::HandleUCIGo(const std::string& goCommand)
             ss >> depth;
             Debug::RunPerft(board, depth, true, true);
         }
-        else
+        else if (token == "infinite")
         {
-            auto searchResult = Search::AlphaBetaMaxSearch(board, 8, std::numeric_limits<double>::lowest(), std::numeric_limits<double>::max());
-            auto bestMove = searchResult.bestMove;
-
-            std::cout << "bestmove " << bestMove.ToUCIString() << std::endl;
+            Search::SearchMaxTimeSeconds = std::numeric_limits<double>::infinity();
+            Search::SearchMaxDepth = 8;
+        }
+        else if (token == "movetime")
+        {
+            int moveTimeMs;
+            ss >> moveTimeMs;
+            Search::SearchMaxTimeSeconds = static_cast<double>(moveTimeMs) / 1000.0;
+            Search::SearchMaxDepth = 20;
+        }
+        else if (token == "depth")
+        {
+            int depth;
+            ss >> depth;
+            Search::SearchMaxTimeSeconds = std::numeric_limits<double>::infinity();
+            Search::SearchMaxDepth = depth;
         }
     }
+
+    if (searchThread.joinable())
+    {
+        searchThread.join();
+    }
+
+    searchInProgress = true;
+    Search::SearchStopped = false;
+
+    searchThread = std::thread([this]()
+    {
+        lastSearchResult = Search::StartSearch(board);
+        searchInProgress = false;
+        std::cout << "bestmove " << lastSearchResult.bestMove.ToUCIString() << std::endl;
+    });
 }
 
 void Engine::HandleUCIStop()
 {
-    
+    if (searchInProgress)
+    {
+        Search::SearchStopped = true;
+        if (searchThread.joinable())
+        {
+            searchThread.join();
+        }
+        searchInProgress = false;
+    }
 }
 
 void Engine::HandleUCIQuit()

@@ -111,7 +111,7 @@ constexpr std::array<std::array<int, 8>, BoardHelpers::NUM_SQUARES> ComputeKingM
 
 inline constexpr auto KING_MOVES = ComputeKingMoves();
 
-void GeneratePawnMovesForPiece(const Board& board, Piece::Piece piece, int fromSquare, std::vector<Move>& moves)
+void GeneratePawnMovesForPiece(const Board& board, Piece::Piece piece, int fromSquare, MoveList& moves)
 {
     const bool pieceIsWhite = Piece::IsWhite(piece);
 
@@ -131,14 +131,14 @@ void GeneratePawnMovesForPiece(const Board& board, Piece::Piece piece, int fromS
             if ((pieceIsWhite && toRank == BoardHelpers::RANK_8) ||
                 (!pieceIsWhite && toRank == BoardHelpers::RANK_1))
             {
-                moves.emplace_back(fromSquare, toSquare, MoveValues::QUEEN_PROMOTION);
-                moves.emplace_back(fromSquare, toSquare, MoveValues::ROOK_PROMOTION);
-                moves.emplace_back(fromSquare, toSquare, MoveValues::BISHOP_PROMOTION);
-                moves.emplace_back(fromSquare, toSquare, MoveValues::KNIGHT_PROMOTION);
+                moves.AddMove(Move(fromSquare, toSquare, MoveValues::QUEEN_PROMOTION));
+                moves.AddMove(Move(fromSquare, toSquare, MoveValues::ROOK_PROMOTION));
+                moves.AddMove(Move(fromSquare, toSquare, MoveValues::BISHOP_PROMOTION));
+                moves.AddMove(Move(fromSquare, toSquare, MoveValues::KNIGHT_PROMOTION));
             }
             else
             {
-                moves.emplace_back(fromSquare, toSquare, MoveValues::QUIET_MOVE);
+                moves.AddMove(Move(fromSquare, toSquare, MoveValues::QUIET_MOVE));
             }
         }
     }
@@ -154,7 +154,7 @@ void GeneratePawnMovesForPiece(const Board& board, Piece::Piece piece, int fromS
             board.GetPieceAtSquare(intermediateSquare) == Piece::NONE &&
             board.GetPieceAtSquare(toSquare) == Piece::NONE)
         {
-            moves.emplace_back(fromSquare, toSquare, MoveValues::DOUBLE_PAWN_PUSH);
+            moves.AddMove(Move(fromSquare, toSquare, MoveValues::DOUBLE_PAWN_PUSH));
         }
     }
 
@@ -178,7 +178,7 @@ void GeneratePawnMovesForPiece(const Board& board, Piece::Piece piece, int fromS
         // En passant
         if (toSquare == board.GetEnPassantSquare())
         {
-            moves.emplace_back(fromSquare, toSquare, MoveValues::EN_PASSANT);
+            moves.AddMove(Move(fromSquare, toSquare, MoveValues::EN_PASSANT));
             continue;
         }
         
@@ -190,20 +190,20 @@ void GeneratePawnMovesForPiece(const Board& board, Piece::Piece piece, int fromS
             if ((pieceIsWhite && toRank == BoardHelpers::RANK_8) ||
                 (!pieceIsWhite && toRank == BoardHelpers::RANK_1))
             {
-                moves.emplace_back(fromSquare, toSquare, MoveValues::QUEEN_PROMOTION_CAPTURE);
-                moves.emplace_back(fromSquare, toSquare, MoveValues::ROOK_PROMOTION_CAPTURE);
-                moves.emplace_back(fromSquare, toSquare, MoveValues::BISHOP_PROMOTION_CAPTURE);
-                moves.emplace_back(fromSquare, toSquare, MoveValues::KNIGHT_PROMOTION_CAPTURE);
+                moves.AddMove(Move(fromSquare, toSquare, MoveValues::QUEEN_PROMOTION_CAPTURE));
+                moves.AddMove(Move(fromSquare, toSquare, MoveValues::ROOK_PROMOTION_CAPTURE));
+                moves.AddMove(Move(fromSquare, toSquare, MoveValues::BISHOP_PROMOTION_CAPTURE));
+                moves.AddMove(Move(fromSquare, toSquare, MoveValues::KNIGHT_PROMOTION_CAPTURE));
             }
             else
             {
-                moves.emplace_back(fromSquare, toSquare, MoveValues::CAPTURE);
+                moves.AddMove(Move(fromSquare, toSquare, MoveValues::CAPTURE));
             }
         }
     }
 }
 
-void GenerateKnightMovesForPiece(const Board& board, Piece::Piece piece, int fromSquare, std::vector<Move>& moves)
+void GenerateKnightMovesForPiece(const Board& board, Piece::Piece piece, int fromSquare, MoveList& moves)
 {
     const bool pieceIsWhite = Piece::IsWhite(piece);
 
@@ -214,16 +214,16 @@ void GenerateKnightMovesForPiece(const Board& board, Piece::Piece piece, int fro
         Piece::Piece targetPiece = board.GetPieceAtSquare(toSquare);
         if (targetPiece == Piece::NONE)
         {
-            moves.emplace_back(fromSquare, toSquare, MoveValues::QUIET_MOVE);
+            moves.AddMove(Move(fromSquare, toSquare, MoveValues::QUIET_MOVE));
         }
         else if (Piece::IsWhite(targetPiece) != pieceIsWhite)
         {
-            moves.emplace_back(fromSquare, toSquare, MoveValues::CAPTURE);
+            moves.AddMove(Move(fromSquare, toSquare, MoveValues::CAPTURE));
         }
     }
 }
 
-void GenerateSlidingMovesForPiece(const Board& board, Piece::Piece piece, int fromSquare, std::vector<Move>& moves)
+void GenerateSlidingMovesForPiece(const Board& board, Piece::Piece piece, int fromSquare, MoveList& moves)
 {
     const bool pieceIsWhite = Piece::IsWhite(piece);
 
@@ -242,13 +242,13 @@ void GenerateSlidingMovesForPiece(const Board& board, Piece::Piece piece, int fr
             Piece::Piece targetPiece = board.GetPieceAtSquare(toSquare);
             if (targetPiece == Piece::NONE)
             {
-                moves.emplace_back(fromSquare, toSquare, MoveValues::QUIET_MOVE);
+                moves.AddMove(Move(fromSquare, toSquare, MoveValues::QUIET_MOVE));
             }
             else
             {
                 if (Piece::IsWhite(targetPiece) != pieceIsWhite)
                 {
-                    moves.emplace_back(fromSquare, toSquare, MoveValues::CAPTURE);
+                    moves.AddMove(Move(fromSquare, toSquare, MoveValues::CAPTURE));
                 }
                 break; // Blocked by a piece
             }
@@ -256,7 +256,7 @@ void GenerateSlidingMovesForPiece(const Board& board, Piece::Piece piece, int fr
     }
 }
 
-void GenerateKingMovesForPiece(const Board& board, Piece::Piece piece, int fromSquare, std::vector<Move>& moves)
+void GenerateKingMovesForPiece(const Board& board, Piece::Piece piece, int fromSquare, MoveList& moves)
 {
     const bool pieceIsWhite = Piece::IsWhite(piece);
 
@@ -268,11 +268,11 @@ void GenerateKingMovesForPiece(const Board& board, Piece::Piece piece, int fromS
         Piece::Piece targetPiece = board.GetPieceAtSquare(toSquare);
         if (targetPiece == Piece::NONE)
         {
-            moves.emplace_back(fromSquare, toSquare, MoveValues::QUIET_MOVE);
+            moves.AddMove(Move(fromSquare, toSquare, MoveValues::QUIET_MOVE));
         }
         else if (Piece::IsWhite(targetPiece) != pieceIsWhite)
         {
-            moves.emplace_back(fromSquare, toSquare, MoveValues::CAPTURE);
+            moves.AddMove(Move(fromSquare, toSquare, MoveValues::CAPTURE));
         }
     }
 
@@ -283,7 +283,7 @@ void GenerateKingMovesForPiece(const Board& board, Piece::Piece piece, int fromS
         if (board.GetPieceAtSquare(BoardHelpers::FileRankToSquare(BoardHelpers::FILE_F, BoardHelpers::RANK_1)) == Piece::NONE &&
             board.GetPieceAtSquare(BoardHelpers::FileRankToSquare(BoardHelpers::FILE_G, BoardHelpers::RANK_1)) == Piece::NONE)
         {
-            moves.emplace_back(fromSquare, BoardHelpers::FileRankToSquare(BoardHelpers::FILE_G, BoardHelpers::RANK_1), MoveValues::KING_CASTLE);
+            moves.AddMove(Move(fromSquare, BoardHelpers::FileRankToSquare(BoardHelpers::FILE_G, BoardHelpers::RANK_1), MoveValues::KING_CASTLE));
         }
     }
     if (pieceIsWhite && board.HasCastlingRight(BoardHelpers::WHITE_QUEEN_SIDE_CASTLE))
@@ -293,7 +293,7 @@ void GenerateKingMovesForPiece(const Board& board, Piece::Piece piece, int fromS
             board.GetPieceAtSquare(BoardHelpers::FileRankToSquare(BoardHelpers::FILE_C, BoardHelpers::RANK_1)) == Piece::NONE &&
             board.GetPieceAtSquare(BoardHelpers::FileRankToSquare(BoardHelpers::FILE_D, BoardHelpers::RANK_1)) == Piece::NONE)
         {
-            moves.emplace_back(fromSquare, BoardHelpers::FileRankToSquare(BoardHelpers::FILE_C, BoardHelpers::RANK_1), MoveValues::QUEEN_CASTLE);
+            moves.AddMove(Move(fromSquare, BoardHelpers::FileRankToSquare(BoardHelpers::FILE_C, BoardHelpers::RANK_1), MoveValues::QUEEN_CASTLE));
         }
     }
     if (!pieceIsWhite && board.HasCastlingRight(BoardHelpers::BLACK_KING_SIDE_CASTLE))
@@ -302,7 +302,7 @@ void GenerateKingMovesForPiece(const Board& board, Piece::Piece piece, int fromS
         if (board.GetPieceAtSquare(BoardHelpers::FileRankToSquare(BoardHelpers::FILE_F, BoardHelpers::RANK_8)) == Piece::NONE &&
             board.GetPieceAtSquare(BoardHelpers::FileRankToSquare(BoardHelpers::FILE_G, BoardHelpers::RANK_8)) == Piece::NONE)
         {
-            moves.emplace_back(fromSquare, BoardHelpers::FileRankToSquare(BoardHelpers::FILE_G, BoardHelpers::RANK_8), MoveValues::KING_CASTLE);
+            moves.AddMove(Move(fromSquare, BoardHelpers::FileRankToSquare(BoardHelpers::FILE_G, BoardHelpers::RANK_8), MoveValues::KING_CASTLE));
         }
     }
     if (!pieceIsWhite && board.HasCastlingRight(BoardHelpers::BLACK_QUEEN_SIDE_CASTLE))
@@ -312,7 +312,7 @@ void GenerateKingMovesForPiece(const Board& board, Piece::Piece piece, int fromS
             board.GetPieceAtSquare(BoardHelpers::FileRankToSquare(BoardHelpers::FILE_C, BoardHelpers::RANK_8)) == Piece::NONE &&
             board.GetPieceAtSquare(BoardHelpers::FileRankToSquare(BoardHelpers::FILE_D, BoardHelpers::RANK_8)) == Piece::NONE)
         {
-            moves.emplace_back(fromSquare, BoardHelpers::FileRankToSquare(BoardHelpers::FILE_C, BoardHelpers::RANK_8), MoveValues::QUEEN_CASTLE);
+            moves.AddMove(Move(fromSquare, BoardHelpers::FileRankToSquare(BoardHelpers::FILE_C, BoardHelpers::RANK_8), MoveValues::QUEEN_CASTLE));
         }
     }
 }
@@ -716,11 +716,9 @@ bool MoveIsIllegal(const Board& board, const LegalMoveInfo& legalMoveInfo, const
 
 } // Anonymous namespace for helper functions
 
-std::vector<Move> GeneratePseudoLegalMoves(const Board& board)
+MoveList GeneratePseudoLegalMoves(const Board& board)
 {
-    std::vector<Move> moves;
-    moves.reserve(256); // Preallocate space for moves
-    moves.clear();
+    MoveList moves;
 
     const bool isWhiteToMove = board.IsWhiteToMove();
 
@@ -758,15 +756,15 @@ std::vector<Move> GeneratePseudoLegalMoves(const Board& board)
     return moves;
 }
 
-std::vector<Move> GenerateMoves(const Board& board)
+MoveList GenerateMoves(Board& board, bool onlyCaptures)
 {
-    std::vector<Move> moves;
-    moves.reserve(256); // Preallocate space for moves
-    moves.clear();
+    MoveList moves;
 
     const bool isWhiteToMove = board.IsWhiteToMove();
 
     const LegalMoveInfo friendlyLegalMoveInfo = GenerateLegalMoveInfo(board);
+
+    board.SetCurrentPlayerInCheck(friendlyLegalMoveInfo.KingInCheck());
 
     {
         int pieceSquare = board.GetKingSquare(isWhiteToMove);
@@ -803,16 +801,33 @@ std::vector<Move> GenerateMoves(const Board& board)
         }
     }
 
-    std::vector<Move> legalMoves;
-    legalMoves.reserve(moves.size());
-    legalMoves.clear();
+    MoveList legalMoves;
 
-    for (const Move& move : moves)
+    for (int i = 0; i < moves.moveCount; ++i)
     {
+        const auto& move = moves.moves[i];
+
         if (!MoveIsIllegal(board, friendlyLegalMoveInfo, move))
         {
-            legalMoves.push_back(move);
+            if (onlyCaptures)
+            {
+                if (move.IsCapture())
+                {
+                    legalMoves.AddMove(move);
+                }
+            }
+            else
+            {
+                legalMoves.AddMove(move);
+            }
         }
+    }
+
+    if (!onlyCaptures)
+    {
+        std::sort(legalMoves.moves.data(), legalMoves.moves.data() + legalMoves.moveCount, [](const Move& a, const Move& b) {
+            return a.IsCapture() > b.IsCapture();
+        });
     }
 
     return legalMoves;

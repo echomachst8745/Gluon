@@ -17,8 +17,10 @@ std::uint64_t PerftDivide(int depth, Board& board, bool bulkCount)
     auto moves = MoveGenerator::GenerateMoves(board);
     std::uint64_t totalNodes = 0;
 
-    for (const auto& move : moves)
+    for (int i = 0; i < moves.moveCount; ++i)
     {
+        const auto& move = moves.moves[i];
+
         board.MakeMove(move);
         std::uint64_t nodes = Perft(depth - 1, board, bulkCount);
         board.UnmakeLastMove();
@@ -46,11 +48,13 @@ std::uint64_t Perft(int depth, Board& board, bool bulkCount)
 
     if (bulkCount && depth == 1)
     {
-        return static_cast<std::uint64_t>(moves.size());
+        return static_cast<std::uint64_t>(moves.moveCount);
     }
 
-    for (const auto& move : moves)
+    for (int i = 0; i < moves.moveCount; ++i)
     {
+        const auto& move = moves.moves[i];
+        
         board.MakeMove(move);
         nodes += Perft(depth - 1, board, bulkCount);
         board.UnmakeLastMove();

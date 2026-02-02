@@ -6,101 +6,172 @@
 #include <limits>
 #include <cstdlib>
 #include <vector>
+#include <chrono>
+#include <iostream>
 
 namespace Gluon::Search {
 
-namespace { // Anonymous namespace for helper functions
+std::atomic<bool> SearchStopped = false;
+std::chrono::steady_clock::time_point SearchStartTime;
+double SearchMaxTimeSeconds = 10.0;
+int SearchMaxDepth = 20;
 
-SearchResult AlphaBetaMinSearch(Board& board, int depth, double alpha, double beta)
+namespace { // anonymous namespace for helper functions
+
+SearchResult SearchAllCaptures(Board& board, double alpha, double beta)
 {
-    if (depth == 0)
+    double evaluation = Evaluate::Evaluate(board);
+    if (evaluation >= beta)
     {
-        return SearchResult{ MoveGenerator::Move{}, -Evaluate::Evaluate(board) };
+        return SearchResult{ MoveGenerator::Move(), beta }; // Beta cutoff
+    }
+    if (evaluation > alpha)
+    {
+        alpha = evaluation;
     }
 
-    auto moves = MoveGenerator::GenerateMoves(board);
-
-    if (moves.empty())
+    if (SearchShouldStop())
     {
-        if (true)
+        auto result = SearchResult{ MoveGenerator::Move(), evaluation };
+        result.searchInterrupted = true;
+
+        return result;
+    }
+
+    auto moves = MoveGenerator::GenerateMoves(board, true); // Only captures
+    if (moves.IsEmpty())
+    {
+        return SearchResult{ MoveGenerator::Move(), evaluation };
+    }
+
+    MoveGenerator::Move bestMove = moves.moves[0];
+
+    for (int i = 0; i < moves.moveCount; ++i)
+    {
+        if (SearchShouldStop())
         {
-            return SearchResult{ MoveGenerator::Move{}, std::numeric_limits<double>::max() }; // Checkmate
+            auto result = SearchResult{ bestMove, alpha };
+            result.searchInterrupted = true;
+
+            return result;
         }
 
-        return SearchResult{ MoveGenerator::Move{}, 0.0 }; // Stalemate
-    }
+        const auto& move = moves.moves[i];
 
-    MoveGenerator::Move bestMove = moves[rand() % moves.size()];
-    double bestEvaluation = std::numeric_limits<double>::max();
-    for (const auto& move : moves)
-    {
         board.MakeMove(move);
-        double evaluation = AlphaBetaMaxSearch(board, depth - 1, alpha, beta).evaluation;
+        evaluation = -SearchAllCaptures(board, -beta, -alpha).evaluation;
         board.UnmakeLastMove();
-        if (evaluation < bestEvaluation)
-        {
-            bestEvaluation = evaluation;
-            bestMove = move;
 
-            if (evaluation < beta)
-            {
-                beta = evaluation;
-            }
-        }
-        if (evaluation <= alpha)
-        {
-            return SearchResult{ move, evaluation }; // Alpha cutoff
-        }
-    }
-
-    return SearchResult{ bestMove, bestEvaluation };
-}
-
-} // Anonymous namespace for helper functions
-
-SearchResult AlphaBetaMaxSearch(Board& board, int depth, double alpha, double beta)
-{
-    if (depth == 0)
-    {
-        return SearchResult{ MoveGenerator::Move{}, Evaluate::Evaluate(board) };
-    }
-
-    auto moves = MoveGenerator::GenerateMoves(board);
-
-    if (moves.empty())
-    {
-        if (true)
-        {
-            return SearchResult{ MoveGenerator::Move{}, std::numeric_limits<double>::lowest() }; // Checkmate
-        }
-        
-        return SearchResult{ MoveGenerator::Move{}, 0.0 }; // Stalemate
-    }
-
-    MoveGenerator::Move bestMove = moves[rand() % moves.size()];
-    double bestEvaluation = std::numeric_limits<double>::lowest();
-    for (const auto& move : moves)
-    {
-        board.MakeMove(move);
-        double evaluation = AlphaBetaMinSearch(board, depth - 1, alpha, beta).evaluation;
-        board.UnmakeLastMove();
-        if (evaluation > bestEvaluation)
-        {
-            bestEvaluation = evaluation;
-            bestMove = move;
-
-            if (evaluation > alpha)
-            {
-                alpha = evaluation;
-            }
-        }
         if (evaluation >= beta)
         {
-            return SearchResult{ move, evaluation }; // Beta cutoff
+            return SearchResult{ move, beta }; // Beta cutoff
+        }
+
+        if (evaluation > alpha)
+        {
+            alpha = evaluation;
+            bestMove = move;
         }
     }
 
-    return SearchResult{ bestMove, bestEvaluation };
+    return SearchResult{ bestMove, alpha };
+}
+
+SearchResult Search(Board& board, int depth, double alpha, double beta)
+{
+    if (depth == 0)
+    {
+        return SearchAllCaptures(board, alpha, beta);
+    }
+
+    auto moves = MoveGenerator::GenerateMoves(board);
+    if (moves.IsEmpty())
+    {
+        if (board.IsCurrentPlayerInCheck())
+        {
+            return SearchResult{ MoveGenerator::Move(), -std::numeric_limits<double>::infinity() }; // Checkmate
+        }
+
+        return SearchResult{ MoveGenerator::Move(), 0.0 }; // Stalemate
+    }
+
+    MoveGenerator::Move bestMove = moves.moves[0];
+
+    for (int i = 0; i < moves.moveCount; ++i)
+    {
+        if (SearchShouldStop())
+        {
+            auto result = SearchResult{ bestMove, alpha };
+            result.searchInterrupted = true;
+
+            return result;
+        }
+
+        const auto& move = moves.moves[i];
+
+        board.MakeMove(move);
+        double evaluation = -Search(board, depth - 1, -beta, -alpha).evaluation;
+        board.UnmakeLastMove();
+
+        if (evaluation >= beta)
+        {
+            return SearchResult{ move, beta }; // Beta cutoff
+        }
+        if (evaluation > alpha)
+        {
+            alpha = evaluation;
+            bestMove = move;
+        }
+    }
+
+    return SearchResult{ bestMove, alpha };
+}
+
+} // anonymous namespace for helper functions
+
+bool SearchShouldStop()
+{
+    if (SearchStopped)
+    {
+        return true;
+    }
+
+    auto currentTime = std::chrono::steady_clock::now();
+    std::chrono::duration<double> elapsedSeconds = currentTime - SearchStartTime;
+
+    if (elapsedSeconds.count() >= SearchMaxTimeSeconds)
+    {
+        return true;
+    }
+
+    return false;
+}
+
+SearchResult StartSearch(Board& board)
+{
+    SearchStartTime = std::chrono::steady_clock::now();
+    SearchStopped = false;
+
+    SearchResult finalResult = { MoveGenerator::Move(), -std::numeric_limits<double>::infinity() };
+    for (int depth = 1; depth <= SearchMaxDepth; ++depth)
+    {
+        double alpha = -std::numeric_limits<double>::infinity();
+        double beta = std::numeric_limits<double>::infinity();
+
+        auto depthResult = Search(board, depth, alpha, beta);
+
+        if (depthResult.evaluation > finalResult.evaluation && !depthResult.searchInterrupted)
+        {
+            finalResult = depthResult;
+        }
+
+        if (SearchShouldStop())
+        {
+            break;
+        }
+    }
+
+    return finalResult;
 }
 
 } // namespace Gluon::Search

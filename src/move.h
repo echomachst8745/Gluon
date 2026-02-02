@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <string>
+#include <array>
 
 namespace Gluon::MoveGenerator::MoveValues {
 
@@ -32,6 +33,8 @@ constexpr int TO_SQUARE_SHIFT   = 4;
 
 namespace Gluon::MoveGenerator {
 
+constexpr int MAX_MOVES_PER_POSITION = 256;
+
 struct Move
 {
     std::uint16_t move;
@@ -53,6 +56,18 @@ struct Move
     bool IsPromotion() const noexcept;
     
     const std::string ToUCIString() const noexcept;
+};
+
+struct MoveList
+{
+    std::array<Move, MAX_MOVES_PER_POSITION> moves;
+
+    int moveCount = 0;
+
+    void Clear();
+    void AddMove(const Move& move);
+
+    bool IsEmpty() const noexcept;
 };
 
 } // namespace Gluon::MoveGenerator

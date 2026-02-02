@@ -1,8 +1,11 @@
 #pragma once
 
 #include "board.h"
+#include "search.h"
 
 #include <string>
+#include <thread>
+#include <atomic>
 
 namespace Gluon::Engine {
 
@@ -23,6 +26,10 @@ private:
     bool shouldQuit;
 
     Board board;
+
+    std::thread searchThread;
+    std::atomic<bool> searchInProgress;
+    Search::SearchResult lastSearchResult;
 
     void HandleUCI();
     void HandleIsReady();
