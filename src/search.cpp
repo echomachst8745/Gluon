@@ -82,7 +82,7 @@ double SearchAllCaptures(Board& board, double alpha, double beta)
     return alpha;
 }
 
-double Search(Board& board, int depth, double alpha, double beta)
+double Search(Board& board, int depth, double alpha, double beta, TranspositionTable::TranspositionTable& transpositionTable)
 {
     if (board.GetCurrentPositionHistoryCount() >= 3)
     {
@@ -92,6 +92,29 @@ double Search(Board& board, int depth, double alpha, double beta)
     if (board.GetHalfmoveClock() >= 50)
     {
         return 0.0; // Fifty-move rule is a draw
+    }
+
+    std::uint64_t zobristHash = board.GetZobristHash();
+    auto& ttEntry = transpositionTable.RetrieveEntry(zobristHash);
+    if (ttEntry.IsValidEntry() && ttEntry.depth >= depth)
+    {
+        if (ttEntry.entryType == TranspositionTable::EXACT)
+        {
+            return ttEntry.evaluation;
+        }
+        else if (ttEntry.entryType == TranspositionTable::LOWERBOUND)
+        {
+            alpha = std::max(alpha, ttEntry.evaluation);
+        }
+        else if (ttEntry.entryType == TranspositionTable::UPPERBOUND)
+        {
+            beta = std::min(beta, ttEntry.evaluation);
+        }
+        
+        if (alpha >= beta)
+        {
+            return ttEntry.evaluation;
+        }
     }
 
     if (depth == 0)
@@ -110,13 +133,16 @@ double Search(Board& board, int depth, double alpha, double beta)
         return 0.0; // Stalemate
     }
 
+    const double startAlpha = alpha;
+    MoveGenerator::Move bestMove = moves.moves[0];
+
     OrderMoves(board, moves);
     for (int i = 0; i < moves.moveCount; ++i)
     {
         const auto& move = moves.moves[i];
 
         board.MakeMove(move);
-        double evaluation = -Search(board, depth - 1, -beta, -alpha);
+        double evaluation = -Search(board, depth - 1, -beta, -alpha, transpositionTable);
         board.UnmakeLastMove();
 
         if (evaluation >= beta)
@@ -126,15 +152,29 @@ double Search(Board& board, int depth, double alpha, double beta)
         if (evaluation > alpha)
         {
             alpha = evaluation;
+            bestMove = move;
         }
     }
+
+    // Store the result in the transposition table
+    TranspositionTable::EntryType entryType;
+    if (alpha > startAlpha)
+    {
+        entryType = TranspositionTable::EXACT;
+    }
+    else
+    {
+        entryType = TranspositionTable::UPPERBOUND;
+    }
+    
+    transpositionTable.StoreEntry(zobristHash, alpha, depth, entryType, bestMove);
 
     return alpha;
 }
 
 } // anonymous namespace for internal helper functions
 
-MoveGenerator::Move FindBestMove(Board& board, int depth)
+MoveGenerator::Move FindBestMove(Board& board, int depth, TranspositionTable::TranspositionTable& transpositionTable)
 {
     auto moves = MoveGenerator::GenerateMoves(board);
     OrderMoves(board, moves);
@@ -150,7 +190,7 @@ MoveGenerator::Move FindBestMove(Board& board, int depth)
         const auto& move = moves.moves[i];
 
         board.MakeMove(move);
-        double evaluation = -Search(board, depth - 1, alpha, beta);
+        double evaluation = -Search(board, depth - 1, alpha, beta, transpositionTable);
         board.UnmakeLastMove();
 
         if (evaluation > bestEvaluation)

@@ -15,7 +15,7 @@
 
 namespace Gluon::Engine {
 
-Engine::Engine()
+Engine::Engine() : transpositionTable(1024) // 1 GB transposition table
 {
     shouldQuit = false;
 
@@ -119,7 +119,7 @@ void Engine::HandleUCIGo(const std::string& goCommand)
         }
         else if (token == "infinite")
         {
-            auto bestMove = Search::FindBestMove(board, 20);
+            auto bestMove = Search::FindBestMove(board, 20, transpositionTable);
             std::cout << "bestmove " << bestMove.ToUCIString() << std::endl;
         }
         else if (token == "movetime")
@@ -132,7 +132,7 @@ void Engine::HandleUCIGo(const std::string& goCommand)
         {
             int depth;
             ss >> depth;
-            auto bestMove = Search::FindBestMove(board, depth);
+            auto bestMove = Search::FindBestMove(board, depth, transpositionTable);
             std::cout << "bestmove " << bestMove.ToUCIString() << std::endl;
         }
     }

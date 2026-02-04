@@ -16,7 +16,7 @@ TranspositionTable::TranspositionTable(int maxSizeMB)
     maxTableSizeEntries = (maxTableSizeMB * 1024 * 1024) / sizeof(TableEntry);
 
     currentSizeEntries = 0;
-    table.reserve(maxTableSizeEntries);
+    table.resize(maxTableSizeEntries);
 }
 
 void TranspositionTable::StoreEntry(std::uint64_t zobristHash, double evaluation, int depth, EntryType entryType, const MoveGenerator::Move& bestMove)
@@ -93,6 +93,7 @@ size_t TranspositionTable::Size() const noexcept
 void TranspositionTable::Clear()
 {
     table.clear();
+    currentSizeEntries = 0;
 }
 
 } // namespace Gluon::Search::TranspositionTable

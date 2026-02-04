@@ -2,6 +2,7 @@
 
 #include "board.h"
 #include "search.h"
+#include "transpositiontable.h"
 
 #include <string>
 #include <thread>
@@ -26,6 +27,8 @@ private:
     bool shouldQuit;
 
     Board board;
+
+    Search::TranspositionTable::TranspositionTable transpositionTable; // 1 GB transposition table
     
     void HandleUCI();
     void HandleIsReady();
