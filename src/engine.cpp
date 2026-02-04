@@ -119,7 +119,7 @@ void Engine::HandleUCIGo(const std::string& goCommand)
         }
         else if (token == "infinite")
         {
-            auto bestMove = Search::FindBestMove(board, 4);
+            auto bestMove = Search::FindBestMove(board, 20);
             std::cout << "bestmove " << bestMove.ToUCIString() << std::endl;
         }
         else if (token == "movetime")
@@ -132,7 +132,8 @@ void Engine::HandleUCIGo(const std::string& goCommand)
         {
             int depth;
             ss >> depth;
-            
+            auto bestMove = Search::FindBestMove(board, depth);
+            std::cout << "bestmove " << bestMove.ToUCIString() << std::endl;
         }
     }
 }

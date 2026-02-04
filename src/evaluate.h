@@ -12,4 +12,6 @@ constexpr double QUEEN_VALUE = 900.0;
 
 double Evaluate(const Board& board);
 
+double GetPieceValue(Piece::Piece piece);
+
 } // namespace Gluon::Evaluate

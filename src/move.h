@@ -38,6 +38,7 @@ constexpr int MAX_MOVES_PER_POSITION = 256;
 struct Move
 {
     std::uint16_t move;
+    bool isCheckingMove = false;
 
     Move();
 
@@ -54,7 +55,9 @@ struct Move
     bool IsCapture() const noexcept;
 
     bool IsPromotion() const noexcept;
-    
+
+    bool IsCheckingMove() const noexcept;
+
     const std::string ToUCIString() const noexcept;
 };
 

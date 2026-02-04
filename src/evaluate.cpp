@@ -62,16 +62,76 @@ double EvaluatePiecePlacement(const Board& board, bool forWhite)
     return placementScore;
 }
 
+double ForceKingTowardsCornersBonus(const Board& board, bool forWhite, double endgameFactor)
+{
+    double evaluation = 0.0;
+
+    int opponentKingSquare = board.GetKingSquare(!forWhite);
+    int opponentKingRank = BoardHelpers::GetRankFromSquare(opponentKingSquare);
+    int opponentKingFile = BoardHelpers::GetFileFromSquare(opponentKingSquare);
+
+    int opponentKingDistanceFromCenterFile = std::max(3 - opponentKingFile, opponentKingFile - 4);
+    int opponentKingDistanceFromCenterRank = std::max(3 - opponentKingRank, opponentKingRank - 4);
+    int opponentKingDistanceFromCenter = opponentKingDistanceFromCenterFile + opponentKingDistanceFromCenterRank;
+    evaluation += opponentKingDistanceFromCenter;
+
+    int friendlyKingSquare = board.GetKingSquare(forWhite);
+    int friendlyKingRank = BoardHelpers::GetRankFromSquare(friendlyKingSquare);
+    int friendlyKingFile = BoardHelpers::GetFileFromSquare(friendlyKingSquare);
+
+    int distanceBetweenKingsFile = std::abs(friendlyKingFile - opponentKingFile);
+    int distanceBetweenKingsRank = std::abs(friendlyKingRank - opponentKingRank);
+    int distanceBetweenKings = distanceBetweenKingsFile + distanceBetweenKingsRank;
+    evaluation += 14 - distanceBetweenKings;
+
+    return evaluation * 10.0 * endgameFactor;
+}
+
 } // anonymous namespace for helper functions
 
 double Evaluate(const Board& board)
 {
-    double whiteEval = CountMaterial(board, true) + EvaluatePiecePlacement(board, true);
-    double blackEval = CountMaterial(board, false) + EvaluatePiecePlacement(board, false);
+    double whiteMaterial = CountMaterial(board, true);
+    double blackMaterial = CountMaterial(board, false);
+
+    double whitePiecePlacementBonus = EvaluatePiecePlacement(board, true);
+    double blackPiecePlacementBonus = EvaluatePiecePlacement(board, false);
+
+    double endgameFactor = (whiteMaterial + blackMaterial) / 3900.0;
+    bool queensOnBoard = (!board.GetQueenPlacements(true).empty()) || (!board.GetQueenPlacements(false).empty());
+    bool isEndgame = (endgameFactor < 0.5) || (!queensOnBoard && endgameFactor < 0.7);
+
+    double whiteEval = whiteMaterial + whitePiecePlacementBonus;
+    double blackEval = blackMaterial + blackPiecePlacementBonus;
+
+    if (isEndgame)
+    {
+        double whiteKingCornerBonus = ForceKingTowardsCornersBonus(board, true, 1.0 - endgameFactor);
+        double blackKingCornerBonus = ForceKingTowardsCornersBonus(board, false, 1.0 - endgameFactor);
+
+        whiteEval += whiteKingCornerBonus;
+        blackEval += blackKingCornerBonus;
+    }
 
     double perspective = board.IsWhiteToMove() ? 1.0 : -1.0;
 
     return (whiteEval - blackEval) * perspective;
+}
+
+double GetPieceValue(Piece::Piece piece)
+{
+    switch (Piece::GetType(piece))
+    {
+        case Piece::PAWN:   return PAWN_VALUE;
+        case Piece::KNIGHT: return KNIGHT_VALUE;
+        case Piece::BISHOP: return BISHOP_VALUE;
+        case Piece::ROOK:   return ROOK_VALUE;
+        case Piece::QUEEN:  return QUEEN_VALUE;
+        case Piece::KING:   return 0.0;
+
+        default:
+            throw std::invalid_argument("Invalid piece type");
+    }
 }
 
 } // namespace Gluon::Evaluate

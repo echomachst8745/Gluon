@@ -74,6 +74,11 @@ bool Move::IsPromotion() const noexcept
     }
 }
 
+bool Move::IsCheckingMove() const noexcept
+{
+    return isCheckingMove;
+}
+
 const std::string Move::ToUCIString() const noexcept
 {
     char promotionChar = '\0';

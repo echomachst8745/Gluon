@@ -807,27 +807,29 @@ MoveList GenerateMoves(Board& board, bool onlyCaptures)
     {
         const auto& move = moves.moves[i];
 
-        if (!MoveIsIllegal(board, friendlyLegalMoveInfo, move))
+        if (onlyCaptures)
         {
-            if (onlyCaptures)
-            {
-                if (move.IsCapture())
-                {
-                    legalMoves.AddMove(move);
-                }
-            }
-            else
+            if (move.IsCapture() && !MoveIsIllegal(board, friendlyLegalMoveInfo, move))
             {
                 legalMoves.AddMove(move);
             }
         }
+        else if (!MoveIsIllegal(board, friendlyLegalMoveInfo, move))
+        {
+            legalMoves.AddMove(move);
+        }
     }
 
-    if (!onlyCaptures)
+    Board tempBoard = board; // Create a temporary copy of the board to make and undo moves
+    for (int i = 0; i < legalMoves.moveCount; ++i)
     {
-        std::sort(legalMoves.moves.data(), legalMoves.moves.data() + legalMoves.moveCount, [](const Move& a, const Move& b) {
-            return a.IsCapture() > b.IsCapture();
-        });
+        auto& move = legalMoves.moves[i];
+        tempBoard.MakeMove(move);
+        if (tempBoard.IsCurrentPlayerInCheck())
+        {
+            move.isCheckingMove = true;
+        }
+        tempBoard.UnmakeLastMove();
     }
 
     return legalMoves;
