@@ -31,6 +31,7 @@ public:
     void SetCurrentPlayerInCheck(bool inCheck);
     bool IsCurrentPlayerInCheck() const;
 
+    int GetHalfmoveClock() const noexcept;
     int GetFullmoveNumber() const noexcept;
 
     std::uint64_t GetZobristHash() const noexcept;
@@ -57,6 +58,8 @@ public:
 
     std::uint64_t ComputeZobristHash();
 
+    int GetCurrentPositionHistoryCount() const;
+
 private:
     std::array<Piece::Piece, BoardHelpers::NUM_SQUARES> squares;
     PiecePlacements piecePlacements;
@@ -73,6 +76,8 @@ private:
     int fullmoveNumber;
 
     std::uint64_t zobristHash;
+
+    std::vector<std::uint64_t> positionZobristHashHistory;
 
     std::stack<UndoMoveState> undoMoveStateStack;
 };

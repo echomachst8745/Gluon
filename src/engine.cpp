@@ -11,6 +11,7 @@
 #include <limits>
 #include <thread>
 #include <atomic>
+#include <chrono>
 
 namespace Gluon::Engine {
 
@@ -118,7 +119,8 @@ void Engine::HandleUCIGo(const std::string& goCommand)
         }
         else if (token == "infinite")
         {
-            
+            auto bestMove = Search::FindBestMove(board, 4);
+            std::cout << "bestmove " << bestMove.ToUCIString() << std::endl;
         }
         else if (token == "movetime")
         {

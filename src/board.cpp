@@ -52,6 +52,11 @@ bool Board::IsCurrentPlayerInCheck() const
     return currentPlayerInCheck;
 }
 
+int Board::GetHalfmoveClock() const noexcept
+{
+    return halfmoveClock;
+}
+
 int Board::GetFullmoveNumber() const noexcept
 {
     return fullmoveNumber;
@@ -432,6 +437,8 @@ void Board::MakeMove(const MoveGenerator::Move& move)
 
     // Update Zobrist hash
     zobristHash = ComputeZobristHash();
+
+    positionZobristHashHistory.push_back(zobristHash);
 }
 
 void Board::UnmakeLastMove()
@@ -444,6 +451,8 @@ void Board::UnmakeLastMove()
     // Retrieve the last undo state
     const UndoMoveState undoMoveState = undoMoveStateStack.top();
     undoMoveStateStack.pop();
+
+    positionZobristHashHistory.pop_back(); // Remove the hash of the position we're leaving
 
     const MoveGenerator::Move& move = undoMoveState.moveMade;
 
@@ -539,6 +548,20 @@ std::uint64_t Board::ComputeZobristHash()
     }
 
     return hash;
+}
+
+int Board::GetCurrentPositionHistoryCount() const
+{
+    int count = 0;
+    for (const auto hash : positionZobristHashHistory)
+    {
+        if (hash == zobristHash)
+        {
+            count++;
+        }
+    }
+
+    return count;
 }
 
 } // namespace Gluon
