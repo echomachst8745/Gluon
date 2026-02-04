@@ -26,11 +26,7 @@ private:
     bool shouldQuit;
 
     Board board;
-
-    std::thread searchThread;
-    std::atomic<bool> searchInProgress;
-    Search::SearchResult lastSearchResult;
-
+    
     void HandleUCI();
     void HandleIsReady();
     void HandleUCINewGame();

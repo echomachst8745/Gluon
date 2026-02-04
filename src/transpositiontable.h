@@ -3,7 +3,7 @@
 #include "move.h"
 
 #include <cstdint>
-#include <array>
+#include <unordered_map>
 
 namespace Gluon::Search {
 
@@ -20,30 +20,38 @@ struct TableEntry
 {
     std::uint64_t zobristHash;
     double evaluation;
-    int depth = -1;
+    int depth;
     EntryType entryType;
     MoveGenerator::Move bestMove;
+
+    bool isValid = false;
 
     bool IsValidEntry() const noexcept;
 };
 
-constexpr int TableSizeMB = 1024; // Default size 1 GB
-constexpr int TableSizeEntries = (TableSizeMB * 1024 * 1024) / sizeof(struct TableEntry);
-
 class TranspositionTable
 {
 public:
-    TranspositionTable();
+    TranspositionTable(int maxSizeMB);
     ~TranspositionTable() = default;
 
     void StoreEntry(std::uint64_t zobristHash, double evaluation, int depth, EntryType entryType, const MoveGenerator::Move& bestMove);
     TableEntry& RetrieveEntry(std::uint64_t zobristHash);
 
+    void Resize(int maxSizeMB);
+
+    size_t GetMaxTableSizeMB() const noexcept;
+    size_t GetMaxTableSizeEntries() const noexcept;
+
+    size_t SizeMB() const noexcept;
+    size_t Size() const noexcept;
+    
     void Clear();
 
 private:
-    int tableSize;
-    std::array<TableEntry, TableSizeEntries> table;
+    size_t maxTableSizeMB;
+    size_t maxTableSizeEntries;
+    std::unordered_map<std::uint64_t, TableEntry> table;
 };
 
 } // namespace TranspositionTable

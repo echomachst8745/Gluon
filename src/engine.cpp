@@ -118,52 +118,26 @@ void Engine::HandleUCIGo(const std::string& goCommand)
         }
         else if (token == "infinite")
         {
-            Search::SearchMaxTimeSeconds = std::numeric_limits<double>::infinity();
-            Search::SearchMaxDepth = 8;
+            
         }
         else if (token == "movetime")
         {
             int moveTimeMs;
             ss >> moveTimeMs;
-            Search::SearchMaxTimeSeconds = static_cast<double>(moveTimeMs) / 1000.0;
-            Search::SearchMaxDepth = 20;
+            
         }
         else if (token == "depth")
         {
             int depth;
             ss >> depth;
-            Search::SearchMaxTimeSeconds = std::numeric_limits<double>::infinity();
-            Search::SearchMaxDepth = depth;
+            
         }
     }
-
-    if (searchThread.joinable())
-    {
-        searchThread.join();
-    }
-
-    searchInProgress = true;
-    Search::SearchStopped = false;
-
-    searchThread = std::thread([this]()
-    {
-        lastSearchResult = Search::StartSearch(board, Search::SearchMaxTimeSeconds == std::numeric_limits<double>::infinity());
-        searchInProgress = false;
-        std::cout << "bestmove " << lastSearchResult.bestMove.ToUCIString() << std::endl;
-    });
 }
 
 void Engine::HandleUCIStop()
 {
-    if (searchInProgress)
-    {
-        Search::SearchStopped = true;
-        if (searchThread.joinable())
-        {
-            searchThread.join();
-        }
-        searchInProgress = false;
-    }
+    
 }
 
 void Engine::HandleUCIQuit()
