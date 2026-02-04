@@ -15,25 +15,43 @@ TranspositionTable::TranspositionTable(int maxSizeMB)
 {
     maxTableSizeEntries = (maxTableSizeMB * 1024 * 1024) / sizeof(TableEntry);
 
+    currentSizeEntries = 0;
     table.reserve(maxTableSizeEntries);
 }
 
 void TranspositionTable::StoreEntry(std::uint64_t zobristHash, double evaluation, int depth, EntryType entryType, const MoveGenerator::Move& bestMove)
 {
-    TableEntry entry;
+    std::uint64_t index = zobristHash % maxTableSizeEntries;
+
+    auto& entry = table[index];
+
+    if (!entry.isValid || entry.zobristHash != zobristHash)
+    {
+        if (!entry.isValid && currentSizeEntries < maxTableSizeEntries)
+        {
+            // Store it
+            currentSizeEntries++;
+        }
+        else if (entry.isValid && entry.depth > depth)
+        {
+            // Existing entry is deeper, do not overwrite
+            return;
+        }
+    }
+
     entry.zobristHash = zobristHash;
     entry.evaluation = evaluation;
     entry.depth = depth;
     entry.entryType = entryType;
     entry.bestMove = bestMove;
     entry.isValid = true;
-
-    table[zobristHash] = entry;
 }
 
 TableEntry& TranspositionTable::RetrieveEntry(std::uint64_t zobristHash)
 {
-    return table[zobristHash];
+    std::uint64_t index = zobristHash % maxTableSizeEntries;
+
+    return table[index];
 }
 
 void TranspositionTable::Resize(int maxSizeMB)
@@ -44,10 +62,11 @@ void TranspositionTable::Resize(int maxSizeMB)
     if (maxTableSizeEntries < table.size())
     {
         // If the new size is smaller than the current number of entries, we need to clear the table
+        currentSizeEntries = 0;
         Clear();
     }
 
-    table.reserve(maxTableSizeEntries);
+    table.resize(maxTableSizeEntries);
 }
 
 size_t TranspositionTable::GetMaxTableSizeMB() const noexcept
@@ -62,12 +81,12 @@ size_t TranspositionTable::GetMaxTableSizeEntries() const noexcept
 
 size_t TranspositionTable::SizeMB() const noexcept
 {
-    return (table.size() * sizeof(TableEntry)) / (1024 * 1024);
+    return (currentSizeEntries * sizeof(TableEntry)) / (1024 * 1024);
 }
 
 size_t TranspositionTable::Size() const noexcept
 {
-    return table.size();
+    return currentSizeEntries;
 }
 
 void TranspositionTable::Clear()

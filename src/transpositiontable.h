@@ -3,7 +3,7 @@
 #include "move.h"
 
 #include <cstdint>
-#include <unordered_map>
+#include <vector>
 
 namespace Gluon::Search {
 
@@ -45,13 +45,14 @@ public:
 
     size_t SizeMB() const noexcept;
     size_t Size() const noexcept;
-    
+
     void Clear();
 
 private:
     size_t maxTableSizeMB;
     size_t maxTableSizeEntries;
-    std::unordered_map<std::uint64_t, TableEntry> table;
+    size_t currentSizeEntries;
+    std::vector<TableEntry> table;
 };
 
 } // namespace TranspositionTable
