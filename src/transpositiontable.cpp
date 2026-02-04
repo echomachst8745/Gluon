@@ -67,6 +67,7 @@ void TranspositionTable::Resize(int maxSizeMB)
     }
 
     table.resize(maxTableSizeEntries);
+    currentSizeEntries = table.size();
 }
 
 size_t TranspositionTable::GetMaxTableSizeMB() const noexcept
