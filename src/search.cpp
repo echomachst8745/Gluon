@@ -212,23 +212,41 @@ MoveGenerator::Move FindBestMove(Board& board, int maxDepth, TranspositionTable:
     const double alpha = -std::numeric_limits<double>::infinity();
     const double beta = std::numeric_limits<double>::infinity();
 
-    for (int i = 0; i < moves.moveCount; ++i)
+    int startDepth = searchMaxTimeSeconds < std::numeric_limits<double>::infinity() ? 1 : maxDepth;
+    for (int depth = startDepth; depth <= maxDepth; ++depth)
     {
         if (SearchShouldStop())
         {
             break;
         }
 
-        const auto& move = moves.moves[i];
+        MoveGenerator::Move depthBestMove = bestMove;
+        double depthBestEvaluation = -std::numeric_limits<double>::infinity();
 
-        board.MakeMove(move);
-        double evaluation = -Search(board, maxDepth - 1, alpha, beta, transpositionTable);
-        board.UnmakeLastMove();
-
-        if (evaluation > bestEvaluation)
+        for (int i = 0; i < moves.moveCount; ++i)
         {
-            bestEvaluation = evaluation;
-            bestMove = move;
+            if (SearchShouldStop())
+            {
+                break;
+            }
+
+            const auto& move = moves.moves[i];
+
+            board.MakeMove(move);
+            double evaluation = -Search(board, depth - 1, alpha, beta, transpositionTable);
+            board.UnmakeLastMove();
+
+            if (evaluation > depthBestEvaluation)
+            {
+                depthBestEvaluation = evaluation;
+                depthBestMove = move;
+            }
+        }
+
+        if (depthBestEvaluation > bestEvaluation)
+        {
+            bestEvaluation = depthBestEvaluation;
+            bestMove = depthBestMove;
         }
     }
 

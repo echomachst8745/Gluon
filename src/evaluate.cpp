@@ -97,7 +97,7 @@ double Evaluate(const Board& board)
     double whitePiecePlacementBonus = EvaluatePiecePlacement(board, true);
     double blackPiecePlacementBonus = EvaluatePiecePlacement(board, false);
 
-    double endgameFactor = (whiteMaterial + blackMaterial) / 3900.0;
+    double endgameFactor = (whiteMaterial + blackMaterial) / 7800.0;
     bool queensOnBoard = (!board.GetQueenPlacements(true).empty()) || (!board.GetQueenPlacements(false).empty());
     bool isEndgame = (endgameFactor < 0.5) || (!queensOnBoard && endgameFactor < 0.7);
 
