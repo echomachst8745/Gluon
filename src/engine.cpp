@@ -107,6 +107,15 @@ void Engine::HandleUCIPosition(const std::string& positionCommand)
 
 void Engine::HandleUCIGo(const std::string& goCommand)
 {
+    Search::searchShouldStop = true;
+    if (searchThread.joinable())
+    {
+        searchThread.join();
+    }
+
+    int searchDepth = 20;
+    Search::searchMaxTimeSeconds = std::numeric_limits<double>::infinity();
+
     std::stringstream ss(goCommand);
 
     for (std::string token; ss >> token;)
@@ -116,31 +125,44 @@ void Engine::HandleUCIGo(const std::string& goCommand)
             int depth;
             ss >> depth;
             Debug::RunPerft(board, depth, true, true);
+
+            return;
         }
         else if (token == "infinite")
         {
-            auto bestMove = Search::FindBestMove(board, 20, transpositionTable);
-            std::cout << "bestmove " << bestMove.ToUCIString() << std::endl;
+            searchDepth = 20;
+            Search::searchMaxTimeSeconds = std::numeric_limits<double>::infinity();
         }
         else if (token == "movetime")
         {
+            Search::searchShouldStop = false;
             int moveTimeMs;
             ss >> moveTimeMs;
-            
+            Search::searchMaxTimeSeconds = moveTimeMs / 1000.0;
         }
         else if (token == "depth")
         {
-            int depth;
-            ss >> depth;
-            auto bestMove = Search::FindBestMove(board, depth, transpositionTable);
-            std::cout << "bestmove " << bestMove.ToUCIString() << std::endl;
+            Search::searchShouldStop = false;
+            ss >> searchDepth;
         }
     }
+
+    Search::searchShouldStop = false;
+    Search::searchStartTime = std::chrono::steady_clock::now();
+    searchThread = std::thread([this, searchDepth]() {
+        auto bestMove = Search::FindBestMove(board, searchDepth, transpositionTable);
+        std::cout << "bestmove " << bestMove.ToUCIString() << std::endl;
+    });
 }
 
 void Engine::HandleUCIStop()
 {
-    
+    Search::searchShouldStop = true;
+
+    if (searchThread.joinable())
+    {
+        searchThread.join();
+    }
 }
 
 void Engine::HandleUCIQuit()

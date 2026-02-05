@@ -21,10 +21,14 @@ public:
 
     bool EngineShouldQuit();
 
+    bool SearchShouldStop() const noexcept;
+
     void HandleUCICommand(const std::string& command);
 
 private:
     bool shouldQuit;
+
+    std::thread searchThread;
 
     Board board;
 

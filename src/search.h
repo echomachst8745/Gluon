@@ -4,8 +4,15 @@
 #include "move.h"
 #include "transpositiontable.h"
 
+#include <atomic>
+#include <chrono>
+
 namespace Gluon::Search {
 
-MoveGenerator::Move FindBestMove(Board& board, int depth, TranspositionTable::TranspositionTable& transpositionTable);
+extern std::atomic<bool> searchShouldStop;
+extern std::chrono::steady_clock::time_point searchStartTime;
+extern double searchMaxTimeSeconds;
+
+MoveGenerator::Move FindBestMove(Board& board, int maxDepth, TranspositionTable::TranspositionTable& transpositionTable);
 
 } // namespace Gluon::Search

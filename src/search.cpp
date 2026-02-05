@@ -2,13 +2,30 @@
 #include "board.h"
 #include "evaluate.h"
 #include "movegenerator.h"
+#include "engine.h"
 
 #include <limits>
 #include <algorithm>
+#include <chrono>
 
 namespace Gluon::Search {
 
+std::atomic<bool> searchShouldStop = false;
+std::chrono::steady_clock::time_point searchStartTime;
+double searchMaxTimeSeconds = std::numeric_limits<double>::infinity();
+
 namespace { // Anonymous namespace for internal helper functions
+
+bool SearchShouldStop()
+{
+    if (searchShouldStop)
+    {
+        return true;
+    }
+
+    double elapsedTime = std::chrono::duration<double>(std::chrono::steady_clock::now() - searchStartTime).count();
+    return elapsedTime >= searchMaxTimeSeconds;
+}
 
 int ScoreMove(Board& board, const MoveGenerator::Move& move)
 {
@@ -48,6 +65,11 @@ void OrderMoves(Board& board, MoveGenerator::MoveList& moves)
 
 double SearchAllCaptures(Board& board, double alpha, double beta)
 {
+    if (SearchShouldStop())
+    {
+        return Evaluate::Evaluate(board);
+    }
+
     double evaluation = Evaluate::Evaluate(board);
     if (evaluation >= beta)
     {
@@ -84,6 +106,11 @@ double SearchAllCaptures(Board& board, double alpha, double beta)
 
 double Search(Board& board, int depth, double alpha, double beta, TranspositionTable::TranspositionTable& transpositionTable)
 {
+    if (SearchShouldStop())
+    {
+        return Evaluate::Evaluate(board);
+    }
+
     if (board.GetCurrentPositionHistoryCount() >= 3)
     {
         return 0.0; // Threefold repetition is a draw
@@ -174,7 +201,7 @@ double Search(Board& board, int depth, double alpha, double beta, TranspositionT
 
 } // anonymous namespace for internal helper functions
 
-MoveGenerator::Move FindBestMove(Board& board, int depth, TranspositionTable::TranspositionTable& transpositionTable)
+MoveGenerator::Move FindBestMove(Board& board, int maxDepth, TranspositionTable::TranspositionTable& transpositionTable)
 {
     auto moves = MoveGenerator::GenerateMoves(board);
     OrderMoves(board, moves);
@@ -187,10 +214,15 @@ MoveGenerator::Move FindBestMove(Board& board, int depth, TranspositionTable::Tr
 
     for (int i = 0; i < moves.moveCount; ++i)
     {
+        if (SearchShouldStop())
+        {
+            break;
+        }
+
         const auto& move = moves.moves[i];
 
         board.MakeMove(move);
-        double evaluation = -Search(board, depth - 1, alpha, beta, transpositionTable);
+        double evaluation = -Search(board, maxDepth - 1, alpha, beta, transpositionTable);
         board.UnmakeLastMove();
 
         if (evaluation > bestEvaluation)
