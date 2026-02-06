@@ -2,6 +2,7 @@
 
 #include "piece.h"
 #include "boardhelpers.h"
+#include "move.h"
 
 #include <string>
 #include <sstream>
@@ -199,6 +200,156 @@ const std::vector<int>& Board::GetQueenPlacements(bool forWhite) const
 int Board::GetKingPlacement(bool forWhite) const
 {
     return piecePlacementMap.GetKingPlacements(forWhite)[0];
+}
+
+void Board::MakeMove(const Move& move)
+{
+	const int moveFromSquare = move.GetFromSquare();
+	const int moveToSquare = move.GetToSquare();
+	const Piece movingPiece = squares[moveFromSquare];
+	const PieceType movingPieceType = GetPieceType(movingPiece);
+	const Piece capturedPiece = squares[moveToSquare];
+
+	// Updated castling rights
+    if (movingPieceType == PieceType::KING)
+    {
+        castlingRights &= ~(isWhitesMove ? (WHITE_KING_SIDE_CASTLE | WHITE_QUEEN_SIDE_CASTLE)
+                                         : (BLACK_KING_SIDE_CASTLE | BLACK_QUEEN_SIDE_CASTLE));
+    }
+    else if (movingPieceType == PieceType::ROOK)
+    {
+        if (moveFromSquare == FileRankToSquare(FILE_H, RANK_1))
+        {
+            castlingRights &= ~WHITE_QUEEN_SIDE_CASTLE;
+        }
+        else if (moveFromSquare == FileRankToSquare(FILE_A, RANK_1))
+        {
+            castlingRights &= ~WHITE_KING_SIDE_CASTLE;
+        }
+        else if (moveFromSquare == FileRankToSquare(FILE_H, RANK_8))
+        {
+            castlingRights &= ~BLACK_QUEEN_SIDE_CASTLE;
+        }
+        else if (moveFromSquare == FileRankToSquare(FILE_A, RANK_8))
+        {
+            castlingRights &= ~BLACK_KING_SIDE_CASTLE;
+        }
+	}
+
+    if (capturedPiece != NONE_PIECE && GetPieceType(capturedPiece) == PieceType::ROOK)
+    {
+        if (moveToSquare == FileRankToSquare(FILE_H, RANK_1))
+        {
+            castlingRights &= ~WHITE_QUEEN_SIDE_CASTLE;
+        }
+        else if (moveToSquare == FileRankToSquare(FILE_A, RANK_1))
+        {
+            castlingRights &= ~WHITE_KING_SIDE_CASTLE;
+        }
+        else if (moveToSquare == FileRankToSquare(FILE_H, RANK_8))
+        {
+            castlingRights &= ~BLACK_QUEEN_SIDE_CASTLE;
+        }
+        else if (moveToSquare == FileRankToSquare(FILE_A, RANK_8))
+        {
+            castlingRights &= ~BLACK_KING_SIDE_CASTLE;
+		}
+    }
+
+    // Update half move clock
+    if (movingPieceType == PieceType::PAWN || move.IsCapture())
+    {
+        halfMoveClock = 0;
+    }
+    else
+    {
+        halfMoveClock++;
+    }
+
+	// Handle special Moves
+	enPassantSquare = NO_EN_PASSANT; // Reset en passant square by default
+    if (move.HasFlag(Move::MoveFlag::DOUBLE_PAWN_PUSH))
+    {
+		enPassantSquare = moveToSquare + (isWhitesMove ? SOUTH_DIRECTION : NORTH_DIRECTION);
+
+		squares[moveFromSquare] = NONE_PIECE;
+		squares[moveToSquare] = movingPiece;
+		piecePlacementMap.MovePiece(moveFromSquare, moveToSquare);
+    }
+    else if (move.HasFlag(Move::MoveFlag::KING_SIDE_CASTLE))
+    {
+        const int rookFromSquare = moveToSquare + EAST_DIRECTION;
+        const int rookToSquare = moveToSquare + WEST_DIRECTION;
+
+        squares[rookFromSquare] = NONE_PIECE;
+        squares[rookToSquare] = squares[rookFromSquare];
+		piecePlacementMap.MovePiece(rookFromSquare, rookToSquare);
+    }
+    else if (move.HasFlag(Move::MoveFlag::QUEEN_SIDE_CASTLE))
+    {
+        const int rookFromSquare = moveToSquare + WEST_DIRECTION * 2;
+        const int rookToSquare = moveToSquare + EAST_DIRECTION;
+
+        squares[rookFromSquare] = NONE_PIECE;
+        squares[rookToSquare] = squares[rookFromSquare];
+        piecePlacementMap.MovePiece(rookFromSquare, rookToSquare);
+    }
+    else if (move.HasFlag(Move::MoveFlag::EN_PASSANT_CAPTURE))
+    {
+        const int capturedPawnSquare = moveToSquare + (isWhitesMove ? SOUTH_DIRECTION : NORTH_DIRECTION);
+
+        squares[moveFromSquare] = NONE_PIECE;
+        squares[moveToSquare] = movingPiece;
+        piecePlacementMap.MovePiece(moveFromSquare, moveToSquare);
+
+		squares[capturedPawnSquare] = NONE_PIECE;
+        piecePlacementMap.RemovePiece(capturedPawnSquare);
+    }
+    else if (move.IsPromotion())
+    {
+		PieceType promotionPieceType = PieceType::QUEEN; // Queen by default
+        if (move.HasFlag(Move::MoveFlag::KNIGHT_PROMOTION) || move.HasFlag(Move::MoveFlag::KNIGHT_PROMOTION_CAPTURE))
+        {
+            promotionPieceType = PieceType::KNIGHT;
+
+        }
+        else if (move.HasFlag(Move::MoveFlag::BISHOP_PROMOTION) || move.HasFlag(Move::MoveFlag::BISHOP_PROMOTION_CAPTURE))
+        {
+            promotionPieceType = PieceType::BISHOP;
+        }
+        else if (move.HasFlag(Move::MoveFlag::ROOK_PROMOTION) || move.HasFlag(Move::MoveFlag::ROOK_PROMOTION_CAPTURE))
+        {
+            promotionPieceType = PieceType::ROOK;
+        }
+
+        if (move.IsCapture())
+        {
+			piecePlacementMap.RemovePiece(moveToSquare);
+        }
+
+		squares[moveFromSquare] = NONE_PIECE;
+        squares[moveToSquare] = MakePiece(promotionPieceType, isWhitesMove ? PieceColour::WHITE : PieceColour::BLACK);
+        piecePlacementMap.MoveAndChangePiece(moveFromSquare, moveToSquare, squares[moveToSquare]);
+    }
+    else
+    {
+        // Regular move or capture
+        if (move.IsCapture() && !move.HasFlag(Move::EN_PASSANT_CAPTURE))
+        {
+            piecePlacementMap.RemovePiece(moveToSquare);
+        }
+
+        squares[moveFromSquare] = NONE_PIECE;
+        squares[moveToSquare] = movingPiece;
+        piecePlacementMap.MovePiece(moveFromSquare, moveToSquare);
+    }
+
+	// Update side to move and full move number
+    if (!isWhitesMove)
+    {
+		fullMoveNumber++;
+    }
+	isWhitesMove = !isWhitesMove;
 }
 
 } // namespace Gluon

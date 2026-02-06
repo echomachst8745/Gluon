@@ -3,6 +3,7 @@
 #include "boardhelpers.h"
 #include "piece.h"
 #include "pieceplacementmap.h"
+#include "move.h"
 
 #include <array>
 
@@ -50,6 +51,8 @@ public:
 	const std::vector<int>& GetRookPlacements(bool forWhite) const;
 	const std::vector<int>& GetQueenPlacements(bool forWhite) const;
 	int GetKingPlacement(bool forWhite) const;
+
+	void MakeMove(const Move& move);
 };
 
 } // namespace Gluon

@@ -7,11 +7,13 @@ int main()
 {
 	Gluon::Board b;
 
-	auto moves = Gluon::GeneratePseudoLegalMoves(b);
-
-	for (const auto& move : moves)
+	for (int i = 0; i < 10; ++i)
 	{
-		std::cout << move.ToUCIString() << std::endl;
+		auto moves = Gluon::GeneratePseudoLegalMoves(b);
+
+		b.MakeMove(moves[0]);
+
+		std::cout << b.GetBoardString() << std::endl;
 	}
 
 	return 0;
