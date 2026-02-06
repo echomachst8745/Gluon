@@ -18,6 +18,7 @@ Board::Board(const std::string& fen)
 void Board::Clear()
 {
 	squares.fill(PieceType::NONE);
+	piecePlacementMap.Clear();
 	isWhitesMove = true;
 	castlingRights = NO_CASTLING_RIGHTS;
 	enPassantSquare = NO_EN_PASSANT;
@@ -54,7 +55,10 @@ void Board::SetupWithFEN(const std::string& fen)
         }
         else
         {
-            squares[currentSquare++] = CharToPiece(c);
+			Piece piece = CharToPiece(c);
+            squares[currentSquare] = piece;
+            piecePlacementMap.AddPiece(currentSquare, piece);
+            currentSquare++;
         }
     }
 

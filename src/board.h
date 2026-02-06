@@ -2,8 +2,10 @@
 
 #include "boardhelpers.h"
 #include "piece.h"
+#include "pieceplacementmap.h"
 
 #include <array>
+
 #include <cstdint>
 #include <string>
 
@@ -14,6 +16,7 @@ class Board
 {
 private:
 	std::array<Piece, NUM_SQUARES> squares;
+	PiecePlacementMap piecePlacementMap;
 
 	bool isWhitesMove;
 
@@ -23,7 +26,7 @@ private:
 
 	int halfMoveClock;
 	int fullMoveNumber;
-
+	
 public:
 	Board(const std::string& fen = STARTING_POSITION_FEN);
 
