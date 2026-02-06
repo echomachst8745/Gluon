@@ -11,6 +11,22 @@ endif()
 
 project ("Gluon")
 
+# Set compiler flags
+if (MSVC)
+  add_compile_options(/W4 /WX)
+  # Force static runtime library
+  add_compile_options(
+    $<$<CONFIG:Debug>:/MTd>
+    $<$<CONFIG:Release>:/MT>
+    $<$<CONFIG:RelWithDebInfo>:/MT>
+    $<$<CONFIG:MinSizeRel>:/MT>
+  )
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+  add_compile_options(-Wall -Wextra -Werror)
+  # Static linking for Linux
+  add_link_options(-static)
+endif()
+
 # Collect source files.
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 file(GLOB_RECURSE HEADERS "src/*.h")
