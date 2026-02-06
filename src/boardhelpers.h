@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <array>
 
 namespace Gluon {
 
@@ -28,6 +29,18 @@ constexpr int FILE_E = 4;
 constexpr int FILE_F = 5;
 constexpr int FILE_G = 6;
 constexpr int FILE_H = 7;
+
+// Direction offsets for a single step in each of the 8 possible directions (N, E, S, W, NE, NW, SE, SW)
+constexpr std::array<int, 8> DIRECTION_OFFSETS = { 8, 1, -8, -1, 9, 7, -7, -9 };
+constexpr int NORTH_DIRECTION = DIRECTION_OFFSETS[0];
+constexpr int EAST_DIRECTION = DIRECTION_OFFSETS[1];
+constexpr int SOUTH_DIRECTION = DIRECTION_OFFSETS[2];
+constexpr int WEST_DIRECTION = DIRECTION_OFFSETS[3];
+constexpr int NORTH_EAST_DIRECTION = DIRECTION_OFFSETS[4];
+constexpr int NORTH_WEST_DIRECTION = DIRECTION_OFFSETS[5];
+constexpr int SOUTH_EAST_DIRECTION = DIRECTION_OFFSETS[6];
+constexpr int SOUTH_WEST_DIRECTION = DIRECTION_OFFSETS[7];
+constexpr int NUM_DIRECTIONS = static_cast<int>(DIRECTION_OFFSETS.size());
 
 constexpr std::uint8_t NO_CASTLING_RIGHTS      = 0;
 constexpr std::uint8_t WHITE_KING_SIDE_CASTLE  = 1 << 0;

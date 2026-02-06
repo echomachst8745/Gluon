@@ -7,6 +7,8 @@ namespace Gluon {
 // A piece is represented as a single byte, where the lower 6 bits represent the type of piece and the upper 2 bits represent the colour.
 typedef std::uint8_t Piece;
 
+constexpr Piece NONE_PIECE = 0;
+
 // The piece types are represented as bit flags.
 enum PieceType : std::uint8_t
 {

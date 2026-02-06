@@ -151,4 +151,54 @@ const std::string Board::GetBoardString(bool whitePOV) const
     return boardString;
 }
 
+bool Board::IsWhitesMove() const
+{
+    return isWhitesMove;
+}
+
+int Board::GetEnPassantSquare() const
+{
+    return enPassantSquare;
+}
+
+Piece Board::GetPieceAtSquare(int square) const
+{
+    return squares[square];
+}
+
+bool Board::HasCastlingRight(std::uint8_t castlingRight) const
+{
+    return (castlingRights & castlingRight) != 0;
+}
+
+const std::vector<int>& Board::GetPawnPlacements(bool forWhite) const
+{
+    return piecePlacementMap.GetPawnPlacements(forWhite);
+}
+
+const std::vector<int>& Board::GetKnightPlacements(bool forWhite) const
+{
+    return piecePlacementMap.GetKnightPlacements(forWhite);
+}
+
+const std::vector<int>& Board::GetBishopPlacements(bool forWhite) const
+{
+    return piecePlacementMap.GetBishopPlacements(forWhite);
+}
+
+const std::vector<int>& Board::GetRookPlacements(bool forWhite) const
+{
+    return piecePlacementMap.GetRookPlacements(forWhite);
+}
+
+const std::vector<int>& Board::GetQueenPlacements(bool forWhite) const
+{
+    return piecePlacementMap.GetQueenPlacements(forWhite);
+}
+
+int Board::GetKingPlacement(bool forWhite) const
+{
+    return piecePlacementMap.GetKingPlacements(forWhite)[0];
+}
+
 } // namespace Gluon
