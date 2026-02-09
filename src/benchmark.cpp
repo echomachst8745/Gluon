@@ -19,7 +19,7 @@ std::uint64_t PerftTest(Board& board, int depth)
 
 	if (depth == 1)
 	{
-		return static_cast<std::uint64_t>(moves.size());
+		return static_cast<std::uint64_t>(moves.Size());
 	}
 
 	std::uint64_t nodes = 0;
