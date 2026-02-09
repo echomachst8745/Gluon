@@ -38,6 +38,8 @@ private:
 	std::array<PieceBucket, NUM_SQUARES> squareToBucket;
 	std::array<int, NUM_SQUARES> squareToIndexInBucket;
 
+	std::array<std::uint64_t, PieceBucket::BUCKET_COUNT> pieceBitboardBuckets;
+
 	const PieceBucket GetBucketForPiece(Piece piece) const;
 
 public:
@@ -59,6 +61,13 @@ public:
 	inline const std::vector<int>& GetRookPlacements(bool forWhite) const { return forWhite ? pieceBuckets[WHITE_ROOKS] : pieceBuckets[BLACK_ROOKS]; }
 	inline const std::vector<int>& GetQueenPlacements(bool forWhite) const { return forWhite ? pieceBuckets[WHITE_QUEENS] : pieceBuckets[BLACK_QUEENS]; }
 	inline const std::vector<int>& GetKingPlacements(bool forWhite) const { return forWhite ? pieceBuckets[WHITE_KING] : pieceBuckets[BLACK_KING]; }
+
+	inline std::uint64_t GetPawnBitboard(bool forWhite) const { return forWhite ? pieceBitboardBuckets[WHITE_PAWNS] : pieceBitboardBuckets[BLACK_PAWNS]; }
+	inline std::uint64_t GetKnightBitboard(bool forWhite) const { return forWhite ? pieceBitboardBuckets[WHITE_KNIGHTS] : pieceBitboardBuckets[BLACK_KNIGHTS]; }
+	inline std::uint64_t GetBishopBitboard(bool forWhite) const { return forWhite ? pieceBitboardBuckets[WHITE_BISHOPS] : pieceBitboardBuckets[BLACK_BISHOPS]; }
+	inline std::uint64_t GetRookBitboard(bool forWhite) const { return forWhite ? pieceBitboardBuckets[WHITE_ROOKS] : pieceBitboardBuckets[BLACK_ROOKS]; }
+	inline std::uint64_t GetQueenBitboard(bool forWhite) const { return forWhite ? pieceBitboardBuckets[WHITE_QUEENS] : pieceBitboardBuckets[BLACK_QUEENS]; }
+	inline std::uint64_t GetKingBitboard(bool forWhite) const { return forWhite ? pieceBitboardBuckets[WHITE_KING] : pieceBitboardBuckets[BLACK_KING]; }
 };
 
 } // namespace Gluon

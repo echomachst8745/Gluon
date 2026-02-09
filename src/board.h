@@ -4,11 +4,13 @@
 #include "piece.h"
 #include "pieceplacementmap.h"
 #include "move.h"
+#include "boardstate.h"
 
 #include <array>
 
 #include <cstdint>
 #include <string>
+#include <stack>
 
 namespace Gluon {
 
@@ -27,6 +29,8 @@ private:
 
 	int halfMoveClock;
 	int fullMoveNumber;
+
+	std::stack<BoardState> boardStateHistory;
 	
 public:
 	Board(const std::string& fen = STARTING_POSITION_FEN);
@@ -52,7 +56,18 @@ public:
 	const std::vector<int>& GetQueenPlacements(bool forWhite) const;
 	int GetKingPlacement(bool forWhite) const;
 
+	std::uint64_t GetPawnPlacementBitboard(bool forWhite) const;
+	std::uint64_t GetKnightPlacementBitboard(bool forWhite) const;
+	std::uint64_t GetBishopPlacementBitboard(bool forWhite) const;
+	std::uint64_t GetRookPlacementBitboard(bool forWhite) const;
+	std::uint64_t GetQueenPlacementBitboard(bool forWhite) const;
+
+	std::uint64_t GetOccupiedSquaresBitboardForColour(bool forwhite) const;
+	std::uint64_t GetAllOccupiedSquaresBitboard() const;
+
 	void MakeMove(const Move& move);
+
+	void UndoLastMove();
 };
 
 } // namespace Gluon

@@ -32,6 +32,7 @@ void PiecePlacementMap::Clear()
 	}
 	squareToBucket.fill(PieceBucket::BUCKET_COUNT);
 	squareToIndexInBucket.fill(-1);
+	pieceBitboardBuckets.fill(0);
 }
 
 void PiecePlacementMap::AddPiece(int square, Piece piece)
@@ -46,6 +47,8 @@ void PiecePlacementMap::AddPiece(int square, Piece piece)
 	squareToBucket[square] = bucket;
 	pieceBuckets[bucket].push_back(square);
 	squareToIndexInBucket[square] = static_cast<int>(pieceBuckets[bucket].size() - 1);
+
+	pieceBitboardBuckets[bucket] |= (1ULL << square);
 }
 
 void PiecePlacementMap::RemovePiece(int square)
@@ -67,6 +70,8 @@ void PiecePlacementMap::RemovePiece(int square)
 	squareToIndexInBucket[lastSquareInBucket] = indexInBucket;
 	squareToBucket[square] = PieceBucket::BUCKET_COUNT;
 	squareToIndexInBucket[square] = -1;
+
+	pieceBitboardBuckets[bucket] &= ~(1ULL << square);
 }
 
 void PiecePlacementMap::MovePiece(int fromSquare, int toSquare)
@@ -90,6 +95,9 @@ void PiecePlacementMap::MovePiece(int fromSquare, int toSquare)
 
 	squareToBucket[toSquare] = fromBucket;
 	squareToIndexInBucket[toSquare] = indexInBucket;
+
+	pieceBitboardBuckets[fromBucket] &= ~(1ULL << fromSquare);
+	pieceBitboardBuckets[fromBucket] |= (1ULL << toSquare);
 
 	squareToBucket[fromSquare] = PieceBucket::BUCKET_COUNT;
 	squareToIndexInBucket[fromSquare] = -1;

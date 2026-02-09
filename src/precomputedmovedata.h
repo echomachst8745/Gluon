@@ -3,6 +3,7 @@
 #include "boardhelpers.h"
 
 #include <array>
+#include <cstdint>
 
 namespace Gluon {
 
@@ -26,12 +27,6 @@ constexpr std::array<std::array<int, NUM_DIRECTIONS>, NUM_SQUARES> PawnMovesPerS
 	{
 		int fromFile = GetFileFromSquare(square);
 		int fromRank = GetRankFromSquare(square);
-
-		if (fromRank < RANK_2 || fromRank > RANK_8)
-		{
-			pawnMovesPerSquare[square].fill(-1); // Invalid pawn moves for ranks 1 and 8
-			continue;
-		}
 
 		int whiteSinglePush = FileRankToSquare(fromFile, fromRank + 1);
 		int whiteDoublePushRank = (fromRank == RANK_2) ? FileRankToSquare(fromFile, fromRank + 2) : -1;
@@ -158,6 +153,258 @@ constexpr std::array<std::array<int, NUM_DIRECTIONS>, NUM_SQUARES> KingMovesPerS
 	}
 
 	return kingMovesPerSquare;
+}();
+
+static const std::array<std::uint64_t, NUM_SQUARES> WhitePawnAttacksBitboardPerSquare = []() constexpr
+{
+	std::array<std::uint64_t, NUM_SQUARES> whitePawnAttacksBitboardPerSquare;
+
+	for (int square = 0; square < NUM_SQUARES; ++square)
+	{
+		std::uint64_t whitePawnAttacksBitboard = 0;
+
+		int westAttackSquare = PawnMovesPerSquare[square][2];
+		int eastAttackSquare = PawnMovesPerSquare[square][3];
+
+		if (westAttackSquare != -1)
+		{
+			whitePawnAttacksBitboard |= (1ULL << westAttackSquare);
+		}
+		if (eastAttackSquare != -1)
+		{
+			whitePawnAttacksBitboard |= (1ULL << eastAttackSquare);
+		}
+
+		whitePawnAttacksBitboardPerSquare[square] = whitePawnAttacksBitboard;
+	}
+
+	return whitePawnAttacksBitboardPerSquare;
+}();
+
+static const std::array<std::uint64_t, NUM_SQUARES> BlackPawnAttacksBitboardPerSquare = []() constexpr
+{
+	std::array<std::uint64_t, NUM_SQUARES> blackPawnAttacksBitboardPerSquare;
+
+	for (int square = 0; square < NUM_SQUARES; ++square)
+	{
+		std::uint64_t blackPawnAttacksBitboard = 0;
+
+		int westAttackSquare = PawnMovesPerSquare[square][6];
+		int eastAttackSquare = PawnMovesPerSquare[square][7];
+
+		if (westAttackSquare != -1)
+		{
+			blackPawnAttacksBitboard |= (1ULL << westAttackSquare);
+		}
+		if (eastAttackSquare != -1)
+		{
+			blackPawnAttacksBitboard |= (1ULL << eastAttackSquare);
+		}
+
+		blackPawnAttacksBitboardPerSquare[square] = blackPawnAttacksBitboard;
+	}
+
+	return blackPawnAttacksBitboardPerSquare;
+}();
+
+static const std::array<std::uint64_t, NUM_SQUARES> KnightAttacksBitboardPerSquare = []() constexpr
+{
+	std::array<std::uint64_t, NUM_SQUARES> knightAttacksBitboardPerSquare;
+
+	for (int square = 0; square < NUM_SQUARES; ++square)
+	{
+		std::uint64_t knightAttacksBitboard = 0;
+
+		for (int targetSquare : KnightMovesPerSquare[square])
+		{
+			if (targetSquare == -1)
+			{
+				break;
+			}
+
+			knightAttacksBitboard |= (1ULL << targetSquare);
+		}
+
+		knightAttacksBitboardPerSquare[square] = knightAttacksBitboard;
+	}
+
+	return knightAttacksBitboardPerSquare;
+}();
+
+static const std::array<std::uint64_t, NUM_SQUARES> BishopAttacksBitboardPerSquare = []() constexpr
+{
+	std::array<std::uint64_t, NUM_SQUARES> bishopAttacksBitboardPerSquare;
+
+	for (int square = 0; square < NUM_SQUARES; ++square)
+	{
+		std::uint64_t bishopAttacksBitboard = 0;
+
+		for (int direction = 4; direction < NUM_DIRECTIONS; ++direction)
+		{
+			for (int step = 1; step <= NumberOfSquaresToEdgePerSquare[square][direction]; ++step)
+			{
+				int targetSquare = square + step * DIRECTION_OFFSETS[direction];
+
+				bishopAttacksBitboard |= (1ULL << targetSquare);
+			}
+		}
+
+		bishopAttacksBitboardPerSquare[square] = bishopAttacksBitboard;
+	}
+
+	return bishopAttacksBitboardPerSquare;
+}();
+
+static const std::array<std::uint64_t, NUM_SQUARES> RookAttacksBitboardPerSquare = []() constexpr
+{
+	std::array<std::uint64_t, NUM_SQUARES> rookAttacksBitboardPerSquare;
+
+	for (int square = 0; square < NUM_SQUARES; ++square)
+	{
+		std::uint64_t rookAttacksBitboard = 0;
+
+		for (int direction = 0; direction < 4; ++direction)
+		{
+			for (int step = 1; step <= NumberOfSquaresToEdgePerSquare[square][direction]; ++step)
+			{
+				int targetSquare = square + step * DIRECTION_OFFSETS[direction];
+
+				rookAttacksBitboard |= (1ULL << targetSquare);
+			}
+		}
+
+		rookAttacksBitboardPerSquare[square] = rookAttacksBitboard;
+	}
+	return rookAttacksBitboardPerSquare;
+}();
+
+static const std::array<std::uint64_t, NUM_SQUARES> KingAttacksBitboardPerSquare = []() constexpr
+{
+	std::array<std::uint64_t, NUM_SQUARES> kingAttacksBitboardPerSquare;
+
+	for (int square = 0; square < NUM_SQUARES; ++square)
+	{
+		std::uint64_t kingAttacksBitboard = 0;
+
+		for (int targetSquare : KingMovesPerSquare[square])
+		{
+			if (targetSquare == -1)
+			{
+				break;
+			}
+
+			kingAttacksBitboard |= (1ULL << targetSquare);
+		}
+
+		kingAttacksBitboardPerSquare[square] = kingAttacksBitboard;
+	}
+
+	return kingAttacksBitboardPerSquare;
+}();
+
+static const std::array<std::array<std::uint64_t, NUM_SQUARES>, NUM_SQUARES> SquaresBetweenBitboard = []() constexpr
+{
+	std::array<std::array<std::uint64_t, NUM_SQUARES>, NUM_SQUARES> squaresBetweenBitboard;
+
+	for (int fromSquare = 0; fromSquare < NUM_SQUARES; ++fromSquare)
+	{
+		for (int toSquare = 0; toSquare < NUM_SQUARES; ++toSquare)
+		{
+			for (int direction = 0; direction < NUM_DIRECTIONS; ++direction)
+			{
+				std::uint64_t betweenBitboard = 0;
+
+				bool toSquareInDirection = false;
+				for (int step = 1; step <= NumberOfSquaresToEdgePerSquare[fromSquare][direction]; ++step)
+				{
+					int targetSquare = fromSquare + step * DIRECTION_OFFSETS[direction];
+
+					if (targetSquare == toSquare)
+					{
+						toSquareInDirection = true;
+						break;
+					}
+
+					betweenBitboard |= (1ULL << targetSquare);
+				}
+
+				if (toSquareInDirection)
+				{
+					squaresBetweenBitboard[fromSquare][toSquare] = betweenBitboard;
+					break;
+				}
+				else
+				{
+					squaresBetweenBitboard[fromSquare][toSquare] = 0;
+				}
+			}
+		}
+	}
+
+	return squaresBetweenBitboard;
+}();
+
+static const std::array<std::array<std::uint64_t, NUM_SQUARES>, NUM_SQUARES> SquaresBetweenAndIncludingBitboard = []() constexpr
+{
+	std::array<std::array<std::uint64_t, NUM_SQUARES>, NUM_SQUARES> squaresBetweenAndIncludingBitboard;
+
+	for (int fromSquare = 0; fromSquare < NUM_SQUARES; ++fromSquare)
+	{
+		for (int toSquare = 0; toSquare < NUM_SQUARES; ++toSquare)
+		{
+			if (SquaresBetweenBitboard[fromSquare][toSquare] != 0)
+			{
+				squaresBetweenAndIncludingBitboard[fromSquare][toSquare] = SquaresBetweenBitboard[fromSquare][toSquare] | (1ULL << fromSquare) | (1ULL << toSquare);
+			}
+			else
+			{
+				squaresBetweenAndIncludingBitboard[fromSquare][toSquare] = 0;
+			}
+		}
+	}
+
+	return squaresBetweenAndIncludingBitboard;
+}();
+
+static const std::array<std::array<std::uint64_t, NUM_SQUARES>, NUM_SQUARES> AllSquaresAllignedBitboard = []() constexpr
+{
+	std::array<std::array<std::uint64_t, NUM_SQUARES>, NUM_SQUARES> allSquaresAllignedBitboard;
+
+	for (int fromSquare = 0; fromSquare < NUM_SQUARES; ++fromSquare)
+	{
+		for (int toSquare = 0; toSquare < NUM_SQUARES; ++toSquare)
+		{
+			for (int direction = 0; direction < NUM_DIRECTIONS; ++direction)
+			{
+				std::uint64_t betweenBitboard = 0;
+
+				bool toSquareInDirection = false;
+				for (int step = 0; step <= NumberOfSquaresToEdgePerSquare[fromSquare][direction]; ++step)
+				{
+					int targetSquare = fromSquare + step * DIRECTION_OFFSETS[direction];
+
+					if (targetSquare == toSquare)
+					{
+						toSquareInDirection = true;
+					}
+
+					betweenBitboard |= (1ULL << targetSquare);
+				}
+
+				if (toSquareInDirection)
+				{
+					allSquaresAllignedBitboard[fromSquare][toSquare] = betweenBitboard;
+					break;
+				}
+				else
+				{
+					allSquaresAllignedBitboard[fromSquare][toSquare] = 0;
+				}
+			}
+		}
+	}
+
+	return allSquaresAllignedBitboard;
 }();
 
 } // namespace Gluon

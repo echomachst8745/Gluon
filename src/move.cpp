@@ -1,6 +1,7 @@
 #include "move.h"
 
 #include "boardhelpers.h"
+#include "piece.h"
 
 namespace Gluon {
 
@@ -65,6 +66,27 @@ bool Move::IsPromotion() const
 bool Move::IsCheckingMove() const
 {
 	return isCheckingMove;
+}
+
+PieceType Move::GetPromotionPieceType() const
+{
+	switch (moveData & FLAG_MASK)
+	{
+		case KNIGHT_PROMOTION:
+		case KNIGHT_PROMOTION_CAPTURE:
+			return PieceType::KNIGHT;
+		case BISHOP_PROMOTION:
+		case BISHOP_PROMOTION_CAPTURE:
+			return PieceType::BISHOP;
+		case ROOK_PROMOTION:
+		case ROOK_PROMOTION_CAPTURE:
+			return PieceType::ROOK;
+		case QUEEN_PROMOTION:
+		case QUEEN_PROMOTION_CAPTURE:
+			return PieceType::QUEEN;
+		default:
+			return PieceType::NONE;
+	}
 }
 
 const std::string Move::ToUCIString() const

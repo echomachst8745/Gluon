@@ -1,5 +1,7 @@
 #pragma once
 
+#include "piece.h"
+
 #include <cstdint>
 #include <string>
 
@@ -50,6 +52,8 @@ public:
 	bool IsCapture() const;
 	bool IsPromotion() const;
 	bool IsCheckingMove() const;
+
+	PieceType GetPromotionPieceType() const;
 
 	const std::string ToUCIString() const;
 };

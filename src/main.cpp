@@ -1,20 +1,13 @@
 ﻿#include <iostream>
 
 #include "board.h"
-#include "movegenerator.h"
+#include "benchmark.h"
 
 int main()
 {
-	Gluon::Board b;
+	Gluon::Board b("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8");
 
-	for (int i = 0; i < 10; ++i)
-	{
-		auto moves = Gluon::GeneratePseudoLegalMoves(b);
-
-		b.MakeMove(moves[0]);
-
-		std::cout << b.GetBoardString() << std::endl;
-	}
+	Gluon::Benchmark::Perft(b, 5);
 
 	return 0;
 }
