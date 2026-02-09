@@ -253,7 +253,13 @@ void GenerateKingMoves(const Board& board, std::vector<Move>& outMoveVector)
 	}
 }
 
-bool IsMoveLegal(const Board& board, const Move& move, const KingSafetyInfo& kingSafetyInfo, std::uint64_t occupiedSquaresBitboard)
+bool IsMoveLegal(const Board& board, const Move& move, const KingSafetyInfo& kingSafetyInfo, std::uint64_t whitePawnPlacementBitboard,
+																					  		 std::uint64_t blackPawnPlacementBitboard,
+																							 std::uint64_t enemyKnightPlacementBitboard,
+																							 std::uint64_t enemyBishopPlacementBitboard,
+																							 std::uint64_t enemyRookPlacementBitboard,
+																							 std::uint64_t enemyQueenPlacementBitboard,
+																							 std::uint64_t occupiedSquaresBitboard)
 {
 	const bool isWhitesMove = board.IsWhitesMove();
 	const int fromSquare = move.GetFromSquare();
@@ -264,13 +270,6 @@ bool IsMoveLegal(const Board& board, const Move& move, const KingSafetyInfo& kin
 
 	const std::uint64_t moveFromBitboard = 1ULL << fromSquare;
 	const std::uint64_t moveToBitboard = 1ULL << toSquare;
-
-	std::uint64_t whitePawnPlacementBitboard = board.GetPawnPlacementBitboard(true);
-	std::uint64_t blackPawnPlacementBitboard = board.GetPawnPlacementBitboard(false);
-	std::uint64_t enemyKnightPlacementBitboard = board.GetKnightPlacementBitboard(!isWhitesMove);
-	std::uint64_t enemyBishopPlacementBitboard = board.GetBishopPlacementBitboard(!isWhitesMove);
-	std::uint64_t enemyRookPlacementBitboard = board.GetRookPlacementBitboard(!isWhitesMove);
-	std::uint64_t enemyQueenPlacementBitboard = board.GetQueenPlacementBitboard(!isWhitesMove);
 
 	// King moves
 	if (movingPieceType == PieceType::KING)
@@ -442,15 +441,24 @@ std::vector<Move> GenerateMoves(const Board& board)
 	std::vector<Move> legalMoves;
 	legalMoves.reserve(pseudoLegalMoves.size()); // Reserve space to avoid frequent reallocations
 
+	const bool isWhitesMove = board.IsWhitesMove();
 	const std::uint64_t allOccupiedSquaresBitboard = board.GetAllOccupiedSquaresBitboard();
+	const std::uint64_t whitePawnPlacementBitboard = board.GetPawnPlacementBitboard(true);
+	const std::uint64_t blackPawnPlacementBitboard = board.GetPawnPlacementBitboard(false);
+	const std::uint64_t enemyKnightPlacementBitboard = board.GetKnightPlacementBitboard(!isWhitesMove);
+	const std::uint64_t enemyBishopPlacementBitboard = board.GetBishopPlacementBitboard(!isWhitesMove);
+	const std::uint64_t enemyRookPlacementBitboard = board.GetRookPlacementBitboard(!isWhitesMove);
+	const std::uint64_t enemyQueenPlacementBitboard = board.GetQueenPlacementBitboard(!isWhitesMove);
 
 	for (const Move& move : pseudoLegalMoves)
 	{
-		int jdsak = move.GetFromSquare();
-		jdsak++;
-		jdsak--;
-
-		if (IsMoveLegal(board, move, kingSafetyInfo, allOccupiedSquaresBitboard))
+		if (IsMoveLegal(board, move, kingSafetyInfo, whitePawnPlacementBitboard,
+												  	 blackPawnPlacementBitboard,
+													 enemyKnightPlacementBitboard,
+													 enemyBishopPlacementBitboard,
+													 enemyRookPlacementBitboard,
+													 enemyQueenPlacementBitboard,
+													 allOccupiedSquaresBitboard))
 		{
 			legalMoves.push_back(move);
 		}
